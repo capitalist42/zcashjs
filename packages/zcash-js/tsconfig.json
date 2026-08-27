@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist", "composite": true },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../core" }, { "path": "../address" },
+    { "path": "../storage" }, { "path": "../light-client" },
+    { "path": "../transaction" }, { "path": "../wasm" }, { "path": "../wallet" },
+    { "path": "../spending" }, { "path": "../integrations" }, { "path": "../advanced" },
+    { "path": "../keys" }, { "path": "../rpc" }
+  ]
+}

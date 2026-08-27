@@ -1,0 +1,20 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/storage" },
+    { "path": "packages/storage-node" },
+    { "path": "packages/light-client" },
+    { "path": "packages/light-client-node" },
+    { "path": "packages/spending" },
+    { "path": "packages/integrations" },
+    { "path": "packages/advanced" },
+    { "path": "packages/keys" },
+    { "path": "packages/rpc" },
+    { "path": "packages/address" },
+    { "path": "packages/transaction" },
+    { "path": "packages/wasm" },
+    { "path": "packages/wallet" },
+    { "path": "packages/zcash-js" }
+  ]
+}

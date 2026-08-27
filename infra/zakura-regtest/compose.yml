@@ -1,0 +1,46 @@
+name: zcash-js-regtest
+
+services:
+  zakura:
+    image: zakuracore/zakura:v1.2.0
+    command: ["--config", "/etc/zakura/regtest.toml", "start"]
+    volumes:
+      - ./zakura.toml:/etc/zakura/regtest.toml:ro
+    ports:
+      - "18432:18232"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getblockchaininfo\",\"params\":[]}' http://127.0.0.1:18232 >/dev/null"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+      start_period: 5s
+    restart: "no"
+    stop_grace_period: 15s
+    security_opt: ["no-new-privileges:true"]
+
+  lightwalletd:
+    image: electriccoinco/lightwalletd:v0.5.2
+    command:
+      - --no-tls-very-insecure
+      - --ping-very-insecure
+      - --grpc-bind-addr=0.0.0.0:9067
+      - --http-bind-addr=0.0.0.0:9068
+      - --zcash-conf-path=/etc/lightwalletd/zcash.conf
+      - --data-dir=/var/lib/lightwalletd
+      - --log-file=/dev/stdout
+      - --log-level=6
+    volumes:
+      - ./zcash.conf:/etc/lightwalletd/zcash.conf:ro
+      - lightwalletd-data:/var/lib/lightwalletd
+    ports:
+      - "19067:9067"
+      - "19068:9068"
+    depends_on:
+      zakura:
+        condition: service_healthy
+    restart: "no"
+    stop_grace_period: 10s
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  lightwalletd-data:

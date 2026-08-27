@@ -1,0 +1,12 @@
+{
+  "name": "@zcash-js/light-client",
+  "version": "0.2.0",
+  "description": "Resumable lightwalletd synchronization for zcash-js",
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist"],
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist", "test": "vitest run", "typecheck": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@zcash-js/core": "0.1.0", "@zcash-js/storage": "0.2.0" },
+  "devDependencies": { "typescript": "^5.9.0", "vitest": "^3.2.0" }
+}

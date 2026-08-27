@@ -1,0 +1,28 @@
+{
+  "name": "zcash-js-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.17.0",
+  "workspaces": ["packages/*"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -b --pretty false",
+    "clean": "tsc -b --clean",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "tsc -b --pretty false",
+    "check": "npm run typecheck && npm test && npm run build",
+    "regtest:up": "docker compose -f infra/zakura-regtest/compose.yml up -d --wait",
+    "regtest:down": "docker compose -f infra/zakura-regtest/compose.yml down",
+    "regtest:reset": "docker compose -f infra/zakura-regtest/compose.yml down --volumes --remove-orphans",
+    "test:live": "npm run build && ZCASH_JS_LIVE_REGTEST=1 vitest run test/live/zakura.test.ts",
+    "test:regtest": "bash scripts/test-regtest.sh",
+    "build:wasm": "npm run build:wasm --workspace @zcash-js/wasm",
+    "pack:check": "npm pack --workspaces --dry-run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

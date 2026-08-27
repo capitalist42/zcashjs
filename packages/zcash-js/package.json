@@ -1,0 +1,29 @@
+{
+  "name": "zcash-js",
+  "version": "0.5.0",
+  "description": "TypeScript-first framework for Zcash applications",
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist"],
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@zcash-js/address": "0.1.0",
+    "@zcash-js/advanced": "0.5.0",
+    "@zcash-js/core": "0.1.0",
+    "@zcash-js/integrations": "0.4.0",
+    "@zcash-js/keys": "0.5.0",
+    "@zcash-js/light-client": "0.2.0",
+    "@zcash-js/storage": "0.2.0",
+    "@zcash-js/spending": "0.3.0",
+    "@zcash-js/rpc": "0.5.0",
+    "@zcash-js/transaction": "0.1.0",
+    "@zcash-js/wasm": "0.1.0",
+    "@zcash-js/wallet": "0.2.0"
+  },
+  "devDependencies": { "typescript": "^5.9.0" }
+}

@@ -1,0 +1,13 @@
+[package]
+name = "zcash-js-wasm"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+f4jumble = "=0.1.1"
+wasm-bindgen = "=0.2.127"
