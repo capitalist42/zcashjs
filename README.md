@@ -1,43 +1,41 @@
-# zcash-js
+# zcash.js
 
-An experimental TypeScript-first framework for Zcash applications. Packages are
-published as ESM JavaScript with TypeScript declarations. Consensus-sensitive
-cryptography belongs in the audited Rust/Wasm boundary, not in TypeScript.
+An experimental TypeScript SDK for Zcash chain queries and local wallets on Node and browsers.
 
-> **Security status:** Phase 1 foundation. This repository has not been audited
-> and must not be used to custody real funds.
+**[Read the developer guide](https://jp4g.github.io/zcash.js/api/README.html)** · [First request](docs/api/installation.md) · [Wallet walkthrough](docs/api/walkthrough.md) · [API reference](docs/api/reference.md)
 
-## Packages
+## What it provides
 
-The workspace includes protocol primitives, addresses, keys, transaction
-inspection, storage, light-client sync, read-only wallets, spending proposals,
-Rust/Wasm boundaries, platform integrations, full-node RPC, and advanced
-pool/multisig extensions. The `zcash-js` package re-exports runtime-neutral APIs;
-Node SQLite is available separately from `@zcash-js/storage-node`.
+- Public JSON-RPC queries and transaction observation through `createPublicClient`.
+- Lightwallet queries and streams through `createLightClient`.
+- Local accounts, scanning, proposals, signing, submission, and recorded payment recovery through `createWalletClient`.
+- Exact bigint amounts, validated network/identifier values, viewing/address tools, and PCZT utilities.
 
-## Development
+The package is private and has no published npm release. Codec capsules are included; wallet execution additionally needs a compatible authenticated runtime package. Applications supply network parameters, endpoints, and any local proving assets. See [wallet setup](docs/api/wallet-runtime.md) and [platform limits](docs/api/platforms.md).
+
+## Build and test
+
+Use Node 22.12 or newer and npm.
 
 ```sh
-npm install
+npm ci
 npm run check
 ```
 
-Run the live Zakura + lightwalletd integration environment with Docker:
+`check` runs source lint, the TypeScript/capsule build, and Node tests. See [tests/README.md](https://github.com/jp4g/zcash.js/blob/main/tests/README.md) for actual browser checks and optional runtime/proving prerequisites. Use `npm run build` followed by `npm pack --ignore-scripts` to prepare a local package; see [installation](docs/api/installation.md).
+
+## Documentation
 
 ```sh
-npm run test:regtest
+npm run docs:typecheck
+npm run docs:build
+npm run docs:dev
 ```
 
-See [the regtest guide](./infra/zakura-regtest/README.md) for ports, lifecycle,
-and the boundary between live chain tests and the not-yet-implemented audited
-shielded cryptography backend.
+The local guide runs at `http://127.0.0.1:4173/`. Its displayed TypeScript snippets are checked against the actual package entry point. GitHub Pages deploys automatically after checks pass on `main`. [Publishing instructions](docs/api/gitbook.md) also cover optional GitBook Git Sync using the same Markdown chapters.
 
-Build the optional Rust/Wasm proof of concept after installing `wasm-pack`:
+[Contributing](CONTRIBUTING.md) describes the PR workflow. Retained planning and research live under `docs/planning` and `docs/research`; they do not override the implemented API.
 
-```sh
-npm run build:wasm
-```
+## License
 
-See [FEATURES.md](./FEATURES.md), [architecture](./docs/architecture/README.md),
-the [read-only wallet guide](./docs/guides/read-only-wallet.md), and the
-[threat model](./docs/THREAT_MODEL.md).
+Project-owned code is [MIT licensed](https://github.com/jp4g/zcash.js/blob/main/LICENSE). Bundled dependencies retain their own licenses; preserve the [third-party notices](https://github.com/jp4g/zcash.js/blob/main/licenses/README.md) when redistributing JavaScript/WASM artifacts.

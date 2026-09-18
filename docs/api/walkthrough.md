@@ -1,0 +1,60 @@
+# Wallet walkthrough
+
+This example imports an existing mnemonic account, scans it, issues a receive address, reviews a payment, and waits for confirmation. It uses the configuration described in [open a wallet](wallet-runtime.md).
+
+Before running it, supply a matching network and wallet runtime, a functioning light source and broadcaster, proving material, and a mnemonic account with sufficient eligible funds. `sync()` discovers funds; it does not create them. The example assumes derivation index zero and uses a full scan for explicit recovery.
+
+```ts
+import { accountIndex, createWalletClient, formatZec, parseZec } from 'zcash.js';
+import type { MemorySigner, Proposal, SignerBinding, WalletOptions } from 'zcash.js';
+
+export async function walletWalkthrough(
+  options: WalletOptions,
+  mnemonic: Uint8Array,
+  recipient: string,
+  requestId: string,
+  approve: (proposal: Proposal) => Promise<boolean>,
+) {
+  const wallet = await createWalletClient(options);
+  let signer: MemorySigner | undefined;
+  let binding: SignerBinding | undefined;
+  try {
+    const imported = await wallet.accounts.import({
+      mnemonic, accountIndex: accountIndex(0), birthday: 'fullScan',
+    });
+    signer = imported.signer;
+    const accountId = imported.account.id;
+    binding = await wallet.accounts.attachSigner({ accountId, signer });
+    if (binding.state !== 'ready') throw new Error('The account needs signer recovery');
+
+    const synced = await wallet.sync();
+    if (!synced.targetReached) throw new Error('Sync stopped before reaching its target');
+    const received = await wallet.addresses.next({ accountId, request: { format: 'unified' } });
+    const balance = await wallet.getBalance({ accountId });
+    if (balance.amounts === null) throw new Error('Balance is not available yet');
+
+    const proposal = await wallet.propose({
+      accountId, to: recipient, amount: parseZec('0.00125'), idempotencyKey: requestId,
+    });
+    if (!await approve(proposal)) {
+      await wallet.operations.abandon({ operationId: proposal.operationId });
+      return { receiveAddress: received.address, totalZec: formatZec(balance.amounts.total), sent: false };
+    }
+    const pending = await wallet.send({ proposal });
+    const confirmation = await pending.wait({ confirmations: 3, timeoutMs: 120_000 });
+    return { receiveAddress: received.address, confirmation, sent: true };
+  } finally {
+    try { await binding?.dispose(); }
+    finally {
+      try { await wallet.close(); }
+      finally { await signer?.dispose(); }
+    }
+  }
+}
+```
+
+The application owns the mnemonic bytes and should clear them when its input flow no longer needs them. `approve` is your review UI: show every recipient, amount, fee, pool, expiry, and transaction step, and resolve only after the user's decision.
+
+If the function rejects after a send starts, do not rerun it with a new request ID. Inspect the structured error, reopen the same database, and [discover/resume the recorded operation](operations.md). A restart flow should list existing accounts rather than blindly importing the account again.
+
+This is a usage example, not a claim that every runtime, provider, or external signer combination has been exercised end to end. The default test suite covers native persistence and many boundary behaviors; complete custom-signer finalization and production deployment combinations need their own integration validation.

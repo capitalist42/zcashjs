@@ -1,0 +1,39 @@
+# zcash.js developer guide
+
+Build a Zcash application with TypeScript: read the chain, maintain a local wallet, receive funds, review a payment, and recover its state after a restart.
+
+The SDK is implemented and experimental. The package is currently private: install a local build, not an assumed npm release. Public and light queries use the included codecs. Wallet operations also need a compatible, authenticated WASM runtime package supplied by your application.
+
+## Choose your starting point
+
+| I want to… | Start here |
+| --- | --- |
+| Install the SDK and make a first request | [Installation](installation.md) |
+| Query blocks and transactions without a wallet | [Public client](public-client.md) |
+| Read lightwallet data or stream blocks | [Light client](light-client.md) |
+| Keep accounts, balances, and transaction history | [Open a wallet](wallet-runtime.md) |
+| Follow a complete wallet workflow | [Wallet walkthrough](walkthrough.md) |
+| Recover after an interrupted payment | [Operations and recovery](operations.md) |
+| Find a specific export or method | [API reference](reference.md) |
+
+## Three clients, different jobs
+
+- `createPublicClient`: stateless JSON-RPC queries and transaction observation.
+- `createLightClient`: lightwallet queries and streams over native gRPC in Node or gRPC-Web in a browser.
+- `createWalletClient`: a local database, scanning, accounts, proposals, signing, and recorded payment operations.
+
+Clients are independent. Pass a light client to a wallet to enable sync; pass a broadcaster explicitly to enable submission. `createZcashClient({ public, light, wallet })` groups existing instances and checks their networks; it does not create or own them.
+
+## A first example
+
+```ts
+import { formatZec, parseZec } from 'zcash.js';
+
+const amount = parseZec('0.00125');
+console.log(amount);           // 125000n zatoshis
+console.log(formatZec(amount)); // "0.00125"
+```
+
+Amounts are `bigint`. Keep user-entered ZEC as a string until `parseZec` validates it.
+
+The chapters below use ordinary TypeScript and the actual package exports. Examples with function parameters expect your application to supply those values. Typechecking verifies the API calls; it does not supply network endpoints, runtime artifacts, accounts, or funds.
