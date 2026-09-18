@@ -1,0 +1,55 @@
+# Errors, cancellation, and cleanup
+
+SDK failures are structured errors. Use `isZcashError` to distinguish them from application errors and inspect the error code and any retained payment state.
+
+```ts
+import { isZcashError } from 'zcash.js';
+
+export async function attempt<T>(work: () => Promise<T>) {
+  try {
+    return { ok: true as const, value: await work() };
+  } catch (error) {
+    if (!isZcashError(error)) throw error;
+    return {
+      ok: false as const,
+      code: error.code,
+      recovery: error.recovery,
+      operationId: error.operationId,
+      paymentState: error.paymentState,
+    };
+  }
+}
+```
+
+These returned details belong in the application's private UI/state, not generic telemetry. `retryable` is not permission to repeat an entire payment workflow.
+
+| Code | Typical response |
+| --- | --- |
+| `INVALID_ARGUMENT` | Correct the supplied value or option |
+| `NETWORK_MISMATCH` | Check network, endpoint, and runtime configuration |
+| `METHOD_NOT_SUPPORTED` | Use a server/backend that implements the requested method |
+| `SYNC_REQUIRED`, `STALE_PROPOSAL` | Sync and obtain a fresh proposal for review |
+| `SIGNER_REQUIRED` | Attach or supply an appropriate signer |
+| `PROVING_MATERIAL_REQUIRED` | Configure matching local proof assets |
+| `STORAGE_BUSY` | Release the other database owner |
+| `RESOURCE_LIMIT` | Reduce concurrent work or adjust the relevant configured budget |
+| `CURSOR_STALE` | Restart pagination from its first page |
+| `ABORTED`, `TIMEOUT` | Inspect progress and retained payment state before retrying |
+| `RECOVERY_REQUIRED` | Inspect recorded state and the indicated recovery action |
+
+## Cancel a read
+
+```ts
+import type { PublicClient } from 'zcash.js';
+
+export async function cancellableTip(client: PublicClient) {
+  const controller = new AbortController();
+  const request = client.getTip({ signal: controller.signal });
+  controller.abort();
+  return request; // rejects if cancellation wins
+}
+```
+
+Pass genuine `AbortSignal` instances rather than object-shaped substitutes. Stop consuming streams with `break`, `return()`, or a signal. Cancellation after a write or dispatch may leave committed work, so use the operation journal to determine the next action.
+
+Await `wallet.close()`. It stops admission and drains accepted work at safe boundaries. Dispose caller-owned signers, signer bindings, viewing handles, and PCZT handles separately. The [walkthrough](walkthrough.md) demonstrates cleanup even when an earlier cleanup step fails.

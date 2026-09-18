@@ -1,20 +1,18 @@
 {
-  "files": [],
-  "references": [
-    { "path": "packages/core" },
-    { "path": "packages/storage" },
-    { "path": "packages/storage-node" },
-    { "path": "packages/light-client" },
-    { "path": "packages/light-client-node" },
-    { "path": "packages/spending" },
-    { "path": "packages/integrations" },
-    { "path": "packages/advanced" },
-    { "path": "packages/keys" },
-    { "path": "packages/rpc" },
-    { "path": "packages/address" },
-    { "path": "packages/transaction" },
-    { "path": "packages/wasm" },
-    { "path": "packages/wallet" },
-    { "path": "packages/zcash-js" }
-  ]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmitOnError": true,
+    "declaration": true,
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"]
 }

@@ -1,28 +1,57 @@
 {
-  "name": "zcash-js-workspace",
-  "version": "0.1.0",
+  "name": "zcash.js",
   "private": true,
-  "type": "module",
-  "packageManager": "npm@11.17.0",
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=22" },
+  "description": "Private initial WASM-independent SDK slice; implemented exports are listed in docs/planning/agnostic-implementation.md.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
-    "build": "tsc -b --pretty false",
-    "clean": "tsc -b --clean",
-    "test": "npm run test --workspaces --if-present",
-    "typecheck": "tsc -b --pretty false",
-    "check": "npm run typecheck && npm test && npm run build",
-    "regtest:up": "docker compose -f infra/zakura-regtest/compose.yml up -d --wait",
-    "regtest:down": "docker compose -f infra/zakura-regtest/compose.yml down",
-    "regtest:reset": "docker compose -f infra/zakura-regtest/compose.yml down --volumes --remove-orphans",
-    "test:live": "npm run build && ZCASH_JS_LIVE_REGTEST=1 vitest run test/live/zakura.test.ts",
-    "test:regtest": "bash scripts/test-regtest.sh",
-    "build:wasm": "npm run build:wasm --workspace @zcash-js/wasm",
-    "pack:check": "npm pack --workspaces --dry-run"
+    "docs:dev": "vitepress dev docs --host 127.0.0.1 --port 4173 --strictPort",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vite preview --outDir docs/.vitepress/dist --host 127.0.0.1 --port 4173 --strictPort --base /",
+    "docs:typecheck": "tsc -p docs/api/examples/tsconfig.json && node scripts/check-guide.mjs",
+    "docs:check-recovery": "node docs/api/check-recovery-spec.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/primitive-capsule.mjs",
+    "test:sdk": "npm run build && node --test tests/sdk/*.test.mjs",
+    "test": "npm run build && node --test --test-concurrency=4 tests/*/*.test.mjs",
+    "test:sdk:real-firefox": "node tests/sdk/real-firefox-run.mjs",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "check": "npm run lint && npm test"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.9.0",
-    "vitest": "^3.2.0"
-  }
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "eslint": "^10.10.0",
+    "rolldown": "1.2.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.70.0",
+    "vitepress": "2.0.0-alpha.20",
+    "webpack": "5.110.3"
+  },
+  "version": "0.0.0",
+  "type": "module",
+  "files": [
+    "dist",
+    "docs/planning/agnostic-implementation.md",
+    "licenses"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./grpc-node": {
+      "node": {
+        "types": "./dist/src/clients/grpc-node.d.ts",
+        "import": "./dist/src/clients/grpc-node.js"
+      }
+    }
+  },
+  "types": "./dist/src/index.d.ts",
+  "sideEffects": false,
+  "dependencies": {
+    "@grpc/grpc-js": "1.14.4"
+  },
+  "license": "MIT"
 }
