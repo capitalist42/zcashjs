@@ -348,10 +348,10 @@ export async function broadcastTransaction(
         || !Number.isInteger(dto.error_code)
         || dto.error_code < -2147483648
         || dto.error_code > 2147483647) throw protocol();
-      // Pinned lightwalletd returns the raw JSON sendrawtransaction result (quoted display txid).
+      // Zaino returns a plain display txid; lightwalletd returns the JSON-quoted result.
       // A successful status alone cannot acknowledge different or unidentified bytes.
       if (dto.error_code === 0 && (typeof dto.error_message !== 'string'
-        || JSON.parse(dto.error_message) !== result.txid)) throw protocol();
+        || (dto.error_message !== result.txid && JSON.parse(dto.error_message) !== result.txid))) throw protocol();
       outcome = dto.error_code === 0 ? 'acknowledged' : 'rejected';
       diagnosticCode = dto.error_code === 0 ? null : `grpc-send:${dto.error_code}`;
     } catch { /* No retry, and no raw provider message or exception escapes into the report. */ }

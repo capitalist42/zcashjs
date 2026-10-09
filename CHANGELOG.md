@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Recognize Zaino's plain transaction ID in successful broadcast replies, while
+  retaining lightwalletd's JSON-quoted format and exact transaction matching.
+
 - Fix wallet sync missing funds sent to ordinary transparent receiving and
   change addresses by updating the bundled native wallet runtime (#14).
 
