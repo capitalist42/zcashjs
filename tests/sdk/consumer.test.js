@@ -190,6 +190,9 @@ test('packed release candidate imports and typechecks in an isolated Node consum
   await writeFile(join(consumer, 'consumer.ts'), `
     import { parseZec, formatZec, txId, blockHash, accountIndex, diversifierIndex, httpTransport, grpc, createLightClient, createPublicClient, isZcashError, defineNetwork, getConsensusContext } from '@jp4g/zcash.js';
     import type { TxId, BlockHash, AccountIndex, DiversifierIndex, HttpTransport, LightClient, ZcashError, Network, NetworkDefinition } from '@jp4g/zcash.js';
+    import type { AccountId, SecretInput, CompactBlock, HeightRange } from '@jp4g/zcash.js';
+    // @ts-expect-error Account IDs retain their database identity brand.
+    const rawAccountId: AccountId = 'not-a-database-account';
     const definition: NetworkDefinition = null!;
     const network: Promise<Network> = defineNetwork(definition);
     const context: import('@jp4g/zcash.js').ConsensusContext = getConsensusContext({ network: null! as Network, targetHeight: 20 });
