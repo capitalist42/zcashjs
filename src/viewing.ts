@@ -15,7 +15,7 @@ import { networkBinding } from './network.js';
 import { snapshot, ownBytes } from './clients/owned-plumbing.js';
 import { operation } from './clients/light-chain-reads.js';
 import { diversifierIndex } from './primitives.js';
-import { failure, invalidArgument, isZcashError } from './errors.js';
+import { failure, invalidArgument, isZcashError, errorTag } from './errors.js';
 
 const handles = new WeakMap<ViewKeyHandle, { native: ViewingAuthority; network: Network; closed: boolean }>();
 const diagnostics: Record<string, readonly [ErrorCode, string]> = {
@@ -47,16 +47,7 @@ const diagnostics: Record<string, readonly [ErrorCode, string]> = {
 };
 function mapped(error: unknown): never {
   if (isZcashError(error)) throw error;
-  let name: unknown;
-  try {
-    name = typeof error === 'string'
-      ? error
-      : error instanceof Error
-        ? Object.getOwnPropertyDescriptor(error, 'message')?.value
-        : undefined;
-  } catch {
-    // Foreign exception objects must not bypass sanitized error mapping.
-  }
+  const name = errorTag(error);
   const diagnostic = typeof name === 'string' && Object.hasOwn(diagnostics, name) ? diagnostics[name] : undefined;
   const code = diagnostic?.[0];
   throw failure(

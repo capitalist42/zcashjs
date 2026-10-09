@@ -1,4 +1,5 @@
 import type { InitializedViews, InitializedSigners } from '../wallet/session.js';
+import { errorTag } from '../errors.js';
 import { installWalletWorker } from '../wallet/worker.js';
 import { sameRecord, walletProfile } from './wallet-profile.js';
 import type { WalletRuntimeIdentity } from './wallet-profile.js';
@@ -209,16 +210,15 @@ async function acquireStorage(storage: Extract<OpenRequest['storage'], { kind: '
 }
 
 const knownFailures = new Set(['INVALID_ARGUMENT', 'PROTOCOL_MISMATCH', 'RESOURCE_LIMIT',
-  'NETWORK_MISMATCH', 'SCHEMA_MISMATCH', 'VIEWING_SCHEMA_REQUIRED']);
+  'NETWORK_MISMATCH', 'SCHEMA_MISMATCH', 'VIEWING_SCHEMA_REQUIRED', 'MIGRATION_REQUIRED']);
 function failureInfo(error: unknown, fallback: string) {
-  let tag: unknown,
-    code = fallback;
-  // Only fixed known tags cross the control channel; never filesystem or native text.
+  const tag = errorTag(error);
+  let code = fallback;
   try {
-    tag = typeof error === 'string' ? error : Object.getOwnPropertyDescriptor(error, 'message')?.value;
-  } catch { /* Unknown failure remains sanitized. */ }
-  try {
-    if (Object.getOwnPropertyDescriptor(error, 'code')?.value === 'EBUSY'
+    const systemCode = Object.getOwnPropertyDescriptor(error, 'code')?.value;
+    if (systemCode === 'ENOSPC' || systemCode === 'EDQUOT'
+      || error instanceof DOMException && error.name === 'QuotaExceededError') code = 'STORAGE_QUOTA';
+    else if (systemCode === 'EBUSY'
       || error instanceof DOMException && error.name === 'NoModificationAllowedError') code = 'STORAGE_BUSY';
   } catch { /* Keep the fixed fallback. */ }
   const known = typeof tag === 'string' && knownFailures.has(tag);
@@ -260,7 +260,9 @@ async function openStorage(request: OpenRequest): Promise<{ code: string; fatal:
       cleanupFailed = true;
       info.code = 'STORAGE_ERROR';
     }
-    return { code: info.code, fatal: cleanupFailed || runtime?.invalid === true || nativeOpening && !info.known };
+    const fatal = cleanupFailed || runtime?.invalid === true
+      || nativeOpening && (!info.known || info.code === 'MIGRATION_REQUIRED');
+    return { code: info.code, fatal };
   }
 }
 

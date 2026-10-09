@@ -137,3 +137,30 @@ for (const fault of ['acquire', 'native-known', 'native-unknown', 'consensus']) 
     assert.equal((await readFile(log, 'utf8')).trim().split('\n').length, events.length);
   }
 });
+
+// Startup fault injection verifies classification and cleanup, not actual disk exhaustion/migration.
+for (const tag of ['MIGRATION_REQUIRED', 'QuotaExceededError', 'ENOSPC', 'EDQUOT']) test(`startup preserves ${tag}`, async t => {
+  const root = await mkdtemp(join(tmpdir(), 'wallet-error-code-'));
+  const worker = new Worker(new URL('../../dist/src/runtime/wallet-worker.js', import.meta.url));
+  const channel = new MessageChannel();
+  t.after(async () => {channel.port1.close(); channel.port2.close(); await worker.terminate(); await rm(root, {recursive:true,force:true});});
+  const identity = {...walletProfile,mode:'baseline',buildSha256:'0'.repeat(64),dependencyGraphSha256:'1'.repeat(64),memory:{initialPages:321,maximumPages:4096,shared:false}};
+  const {memory,...expected} = identity;
+  await writeFile(join(root,'native.mjs'), `
+    export const runtimeIdentity=${JSON.stringify(identity)};
+    export const consensusContext=()=>{};
+    export const initializeWalletRuntime=()=>({invalid:false,open(){throw 'MIGRATION_REQUIRED';}});
+  `);
+  const acquire = tag === 'MIGRATION_REQUIRED' ? 'return {owned:true,release(){}}'
+    : tag === 'QuotaExceededError' ? "throw new DOMException('PRIVATE_SENTINEL','QuotaExceededError')"
+    : `throw Object.assign(Error('PRIVATE_SENTINEL'),{code:${JSON.stringify(tag)}})`;
+  await writeFile(join(root,'host.mjs'), `export const acquire=async()=>{${acquire}};`);
+  const reply = async data => {
+    const answer = once(worker,'message',{signal:AbortSignal.timeout(5000)});
+    worker.postMessage(data,data.port?[data.port]:[]); return (await answer)[0];
+  };
+  assert.equal((await reply({id:1,type:'initialize',moduleUrl:pathToFileURL(join(root,'native.mjs')).href,wasm:new Uint8Array([0]),expected,maxMemoryBytes:512*1024*1024})).type,'ready');
+  const result = await reply({id:2,type:'open',storage:{kind:'node-filesystem',path:root},hostUrl:pathToFileURL(join(root,'host.mjs')).href,parametersFormat:'zcash-js-network/1',parameters:new Uint8Array([1]),genesis:new Uint8Array(32),port:channel.port2});
+  assert.equal(result.type,'failure'); assert.equal(result.code,tag === 'MIGRATION_REQUIRED' ? tag : 'STORAGE_QUOTA');
+  assert.equal(result.fatal,tag === 'MIGRATION_REQUIRED'); assert.doesNotMatch(JSON.stringify(result), /PRIVATE_SENTINEL/);
+});

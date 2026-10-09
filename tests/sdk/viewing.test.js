@@ -17,7 +17,7 @@ test('viewing composition owns native handles, preserves caller cancellation and
     export:(format,ack)=>{assert.equal(ack,'discloses-viewing-authority');if(kind==='uivk'&&format==='ufvk')throw 'FULL_VIEWING_KEY_REQUIRED';return format;},
     toIncoming:()=>native('uivk'),dispose:()=>{freed++;},
     derive:(index,request)=>{calls.push([index,JSON.parse(request)]);return{address:'native',index,receiverTypes:['p2pkh'],intendedPools:['transparent']};},
-    find:(index,request,attempts)=>{assert.equal(attempts,3);return{address:'native-found',index,receiverTypes:['p2pkh'],intendedPools:['transparent']};},
+    find:(index,request,attempts)=>{if(nativeFailure!==undefined)throw nativeFailure;assert.equal(attempts,3);return{address:'native-found',index,receiverTypes:['p2pkh'],intendedPools:['transparent']};},
   };}
   const codec={openViewingAuthority:(_p,format,encoded,pools)=>{calls.push([format,encoded,JSON.parse(pools)]);abortDuring?.abort();return native();},
     decodeViewingAddress:(_p,encoded)=>{if(nativeFailure!==undefined)throw nativeFailure;return{encoded,knownReceivers:['p2pkh'],unknownTypecodes:[]};},
@@ -52,6 +52,10 @@ test('viewing composition owns native handles, preserves caller cancellation and
     });
   }
   assert.equal(errorReads,0);
+  nativeFailure='DIVERSIFIER_EXHAUSTED';
+  await assert.rejects(addresses.find({account:incoming,start:(1n<<88n)-1n,maxAttempts:3}),error=>{
+    assert.equal(error.code,'DIVERSIFIER_EXHAUSTED');assert.match(error.message,/diversifier/i);return true;
+  });
   nativeFailure=new Error('INVALID_ADDRESS');
   await assert.rejects(addresses.decode({network,address:'private address'}),e=>e.code==='INVALID_ARGUMENT'&&/different network/.test(e.message));
   nativeFailure=errors.invalidArgument();

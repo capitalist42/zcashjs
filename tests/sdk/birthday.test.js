@@ -15,6 +15,14 @@ test('birthday composition owns source bytes and preserves cancellation without 
   const module=new vm.SourceTextModule(await readFile(new URL('../../dist/src/birthday.js',import.meta.url),'utf8'),{context});
   await module.link(name=>{const exports=modules[name];return new vm.SyntheticModule(Object.keys(exports),function(){for(const[k,v]of Object.entries(exports))this.setExport(k,v);},{context});});await module.evaluate();
   const {resolveBirthday}=module.namespace,encoded=new Uint8Array([1,2]);
+  for (const foreign of [
+    Object.defineProperty(new Error(), 'message', {get(){throw Error('PRIVATE_SENTINEL');}}),
+    new Proxy(new Error(), {getOwnPropertyDescriptor(){throw Error('PRIVATE_SENTINEL');}}),
+  ]) await assert.rejects(resolveBirthday({light:{network,getTreeState:async()=>{throw foreign;}},firstScanHeight:1}), error => {
+    assert.ok(errors.isZcashError(error)); assert.equal(error.code, 'PROTOCOL_MISMATCH');
+    assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /PRIVATE_SENTINEL/); return true;
+  });
+
   const tree=()=>({network,point:{height:0,hash:network.genesisHash},sapling:null,ironwood:null,encoded,sourceId:'fixture',observedAt:'2026-09-12T00:00:00Z'});
   let requests=0;
   const light={network,async getTreeState(args){requests++;assert.equal(args.height,0);return tree();}};

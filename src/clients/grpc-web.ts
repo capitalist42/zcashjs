@@ -128,9 +128,12 @@ async function* decodeBase64(
 
 function status(value: string | null): void {
   if (value === null || !/^(?:[0-9]|1[0-6])$/.test(value)) throw protocol();
+  if (value === '1') throw aborted();
+  if (value === '4') throw timeout();
+  if (value === '8') throw limit();
   if (value !== '0') {
     const error = failure(value === '12' ? 'METHOD_NOT_SUPPORTED' : 'TRANSPORT_ERROR',
-      'transport', 'configure', 'gRPC request failed.', value === '4' || value === '14');
+      'transport', 'configure', 'gRPC request failed.', value === '14');
     throw value === '5' ? recordNotFound(error) : error;
   }
 }

@@ -108,3 +108,22 @@ test('reopened account restores mnemonic authority offline without changing wall
     mnemonic.fill(0); passphrase.fill(0);
   }
 });
+
+test('bundled native mnemonic and duplicate-account failures preserve useful diagnostics', async () => {
+  const wallet = await createWalletClient('http://127.0.0.1:1', {storage:{kind:'memory'}});
+  let signer;
+  try {
+    await assert.rejects(wallet.accounts.import({mnemonic:new TextEncoder().encode('invalid synthetic mnemonic'),accountIndex:0,birthday:'fullScan'}), error => {
+      assert.equal(error.code,'INVALID_MNEMONIC'); assert.match(error.message,/mnemonic/);
+      assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /invalid synthetic mnemonic/); return true;
+    });
+    const mnemonic = new TextEncoder().encode('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+    const input = {mnemonic,accountIndex:0,birthday:'fullScan'};
+    const created = await wallet.accounts.import(input); signer = created.signer;
+    await assert.rejects(wallet.accounts.import(input), error => {
+      assert.equal(error.code,'ACCOUNT_COLLISION'); assert.match(error.message,/already exists/);
+      assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /abandon/); return true;
+    });
+    assert.equal((await wallet.accounts.list()).length,1);
+  } finally {await signer?.dispose(); await wallet.close();}
+});

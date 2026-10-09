@@ -485,3 +485,13 @@ test('configured scan batches retain the aggregate native byte ceiling', async (
     await assert.rejects(syncWallet(session, light, target, undefined, size), { code: 'INVALID_ARGUMENT' });
   }
 });
+
+test('unsupported target pinning is classified before any scan mutation', async () => {
+  const f = recoveryFixture();
+  f.light.getTreeState = async () => {throw failure('METHOD_NOT_SUPPORTED','transport','configure','Unsupported method.');};
+  await assert.rejects(syncWallet(f.session,f.light,f.target), error => {
+    assert.equal(error.code,'TARGET_PINNING_UNSUPPORTED'); assert.equal(error.recovery,'configure');
+    assert.match(error.message,/pin the sync target/); return true;
+  });
+  assert.equal(f.control.ingests,0); assert.equal(f.control.plans,0);
+});

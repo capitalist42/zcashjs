@@ -39,3 +39,14 @@ test('canonical proving assets are verified on memory and persistent cache retri
   try{await assert.rejects(corrupt.sapling(),{code:'ASSET_INTEGRITY'});assert.equal(loads,before,'corrupt cache is never parsed or silently accepted');}
   finally{await corrupt.close();await rm(directory,{recursive:true,force:true});}
 });
+
+test('unavailable proving assets expose guidance without callback exception text', async () => {
+  const assets = new ProvingAssets(options(() => {throw Error('PRIVATE_SENTINEL');}));
+  try {
+    await assert.rejects(assets.sapling(), error => {
+      assert.equal(error.code,'ASSET_UNAVAILABLE'); assert.equal(error.recovery,'configure');
+      assert.match(error.message,/location and availability/);
+      assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`,/PRIVATE_SENTINEL/); return true;
+    });
+  } finally {await assets.close();}
+});
