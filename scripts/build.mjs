@@ -7,7 +7,8 @@ import { join, resolve } from 'node:path';
 import { buildNative } from './build-native-wallet.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const node = (script, ...args) => execFileSync(process.execPath, [script, ...args], { cwd: root, stdio: 'inherit' });
+// Keep npm pack --json stdout machine-readable during its prepack hook.
+const node = (script, ...args) => execFileSync(process.execPath, [script, ...args], { cwd: root, stdio: ['inherit', 2, 2] });
 
 try {
   rmSync(join(root, 'dist'), { recursive: true, force: true });
@@ -46,7 +47,7 @@ try {
     node('scripts/bundled-assets.mjs', '--generate', runtime, proving);
     node('scripts/bundled-assets.mjs');
   } finally { rmSync(staging, { recursive: true, force: true }); }
-  console.log('SDK build complete: dist/');
+  console.error('SDK build complete: dist/');
 } catch (error) {
   // Never leave an earlier or partially assembled distribution after a failed build.
   rmSync(join(root, 'dist'), { recursive: true, force: true });

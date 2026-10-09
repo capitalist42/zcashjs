@@ -53,11 +53,11 @@ export function buildNative() {
   if (!existsSync(join(output, 'build.json'))) {
     // This directory is owned by the build; an interrupted attempt has no receipt.
     rmSync(output, { recursive: true, force: true });
-    console.log('Building native components; the first build takes several minutes.');
+    console.error('Building native components; the first build takes several minutes.');
     execFileSync('cargo', ['xtask', 'build', '--output', output, '--cache', join(cache, 'cache')],
-      { cwd: source, stdio: 'inherit' });
+      { cwd: source, stdio: ['inherit', 2, 2] });
   } else {
-    console.log('Verifying cached native build.');
+    console.error('Verifying cached native build.');
   }
   const receipt = verifyNativeBuild(output);
   assert.equal(receipt.tree, git('rev-parse', 'HEAD^{tree}'), 'native source tree');
