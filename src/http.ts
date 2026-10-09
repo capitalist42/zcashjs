@@ -1,8 +1,10 @@
-import { waitFor } from './abort.js';
-import type { HttpTransport, TransportOptions, ZcashError } from './types.js';
+import { bridgeSignal, waitFor } from './abort.js';
+import type { BlockHash, HttpTransport, Op, TransportOptions, ZcashError } from './types.js';
 import { failure, invalidArgument, isZcashError } from './errors.js';
 import { JsonNumber, parseJson, protocolError } from './json.js';
 import type { Json } from './json.js';
+import { blockHash } from './primitives.js';
+import { copyRecord } from './clients/owned-plumbing.js';
 
 interface State {
   readonly url: string;
@@ -40,15 +42,22 @@ function integer(value: unknown, minimum: number): asserts value is number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < minimum) throw invalidArgument();
 }
 
-export function http(url: string, options: TransportOptions): HttpTransport {
+export function httpTransport(url: string, options: Partial<TransportOptions> = {}): HttpTransport {
   let endpoint: URL;
+  let message = 'HTTP endpoint must be an absolute HTTP(S) URL without credentials or a fragment.';
   try {
     if (typeof url !== 'string' || url.trim() !== url) throw invalidArgument();
     endpoint = new URL(url);
     if (!['http:', 'https:'].includes(endpoint.protocol) || endpoint.username || endpoint.password
       || url.includes('#')) throw invalidArgument();
+    message = 'HTTP transport options must contain only sourceId, timeoutMs, readRetry, maxResponseBytes and headers.';
     record(options, ['sourceId', 'timeoutMs', 'readRetry', 'maxResponseBytes', 'headers']);
-    const { sourceId, timeoutMs, readRetry, maxResponseBytes, headers } = options;
+    const {
+      sourceId = 'public-rpc', timeoutMs = 30000,
+      readRetry = { attempts: 2, delayMs: 500 },
+      maxResponseBytes = 4 * 1024 * 1024, headers,
+    } = options;
+    message = 'HTTP readRetry must contain attempts and delayMs.';
     record(readRetry, ['attempts', 'delayMs']);
     const snapshot: TransportOptions = {
       sourceId,
@@ -57,11 +66,17 @@ export function http(url: string, options: TransportOptions): HttpTransport {
       ...(headers === undefined ? {} : { headers }),
       readRetry: { attempts: readRetry.attempts, delayMs: readRetry.delayMs },
     };
+    message = 'HTTP sourceId must be a nonempty string.';
     if (typeof snapshot.sourceId !== 'string' || snapshot.sourceId.trim().length === 0) throw invalidArgument();
+    message = 'HTTP timeoutMs must be a positive safe integer.';
     integer(snapshot.timeoutMs, 1);
+    message = 'HTTP maxResponseBytes must be a positive safe integer.';
     integer(snapshot.maxResponseBytes, 1);
+    message = 'HTTP readRetry.attempts must be a positive safe integer.';
     integer(snapshot.readRetry.attempts, 1);
+    message = 'HTTP readRetry.delayMs must be a nonnegative safe integer.';
     integer(snapshot.readRetry.delayMs, 0);
+    message = 'HTTP headers must be a callback.';
     if (snapshot.headers !== undefined && typeof snapshot.headers !== 'function') throw invalidArgument();
     Object.freeze(snapshot.readRetry);
     Object.freeze(snapshot);
@@ -69,7 +84,7 @@ export function http(url: string, options: TransportOptions): HttpTransport {
     transports.set(transport, { url: endpoint.href, options: snapshot, nextId: 0n });
     return transport;
   } catch {
-    throw invalidArgument();
+    throw failure('INVALID_ARGUMENT', 'validation', 'correct-input', message);
   }
 }
 
@@ -301,6 +316,21 @@ function ownParameters(method: string, params: readonly RpcParameter[]): RpcPara
   if (parameters.some(value => !['string', 'boolean'].includes(typeof value)
     && !(typeof value === 'number' && Number.isSafeInteger(value)))) throw invalidArgument();
   return parameters;
+}
+
+/** Read an endpoint-reported genesis identity before defining a custom network. */
+export async function readGenesisHash(transport: HttpTransport, args: Op = {}): Promise<BlockHash> {
+  const owned = await bridgeSignal(copyRecord(args, ['signal']).signal, true);
+  try {
+    const value = await readRpc(transport, 'getblockhash', [0], owned.signal);
+    try {
+      return blockHash(value as string);
+    } catch {
+      throw protocolError();
+    }
+  } finally {
+    owned.close();
+  }
 }
 
 /** Internal read engine; no public raw-RPC escape hatch or broadcast replay. */

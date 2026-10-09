@@ -1,71 +1,123 @@
 # Open a wallet
 
-A wallet owns a local database and a worker. It does not generate a mnemonic, choose a server, or automatically attach a signer.
-
-## Supply the runtime and storage
-
-Wallet execution needs a compatible runtime package in addition to the SDK tarball. Supply its manifest URL and authenticated SHA-256 digest as a `WasmArtifact`. The loader verifies the manifest and executable assets before running them. A random digest, or a digest of a different runtime, will fail.
-
-The repository's test WASM fixtures are not an installable wallet runtime package. Obtain the matching runtime and network parameters for your deployment before attempting this chapter. Use the baseline runtime first; threaded setup has additional requirements described in [platforms](platforms.md).
+A wallet owns a local database and a worker. Supply an endpoint and choose where
+to store its data:
 
 ```ts
-import { createWalletClient } from 'zcash.js';
-import type { LightClient, LocalProvingOptions, Network, WalletStorage, WasmArtifact } from 'zcash.js';
+import { createWalletClient } from '@jp4g/zcash.js';
 
-export async function openWallet(
-  network: Network,
-  light: LightClient,
-  storage: WalletStorage,
-  baseline: WasmArtifact,
-  proving?: LocalProvingOptions,
-) {
-  const confirmations = { trusted: 3, untrusted: 3, allowZeroConfirmationShielding: false };
-  return createWalletClient({
-    network, light, broadcaster: light, storage, confirmations,
-    observation: { pollIntervalMs: 5_000, maxBufferedUpdates: 16 },
-    recovery: { mode: 'offline' },
-    runtime: {
-      baseline,
-      threading: { mode: 'baseline' },
-      maxMemoryBytes: 1024 * 1024 * 1024,
-      maxQueuedBytes: 128 * 1024 * 1024,
-      maxQueuedJobs: 8,
-      scanBatchSize: 16,
-      maxPcztBytes: 4 * 1024 * 1024,
-    },
-    transactionPolicy: {
-      spendPools: ['transparent', 'sapling', 'ironwood'],
-      transparent: 'allow-owned', changePool: 'sapling',
-      feeRule: 'zip317-standard', confirmations,
-      expiry: { kind: 'offset', blocks: 40 },
-      lockExpiryBlocks: 20, shieldingThreshold: 100_000n,
-      freshness: { mode: 'require-synced', maxLagBlocks: 0 },
-    },
-    ...(proving ? { proving } : {}),
+const wallet = await createWalletClient('https://testnet.zec.rocks:443', {
+  network: 'testnet',
+  storage: { kind: 'node-filesystem', path: './my-wallet' },
+});
+
+try {
+  const accounts = await wallet.accounts.list();
+  console.log(accounts);
+} finally {
+  await wallet.close();
+}
+```
+
+The SDK configures the light client, submission route, runtime, proving assets,
+and transaction policy. Opening a wallet does not generate a recovery phrase,
+attach a signer, scan the chain, or send a payment. See
+[Accounts and signers](accounts-signers.md) to import or create an account.
+
+## Defaults
+
+| Option | Default |
+| --- | --- |
+| Network | Mainnet; use `network: 'testnet'` for testnet |
+| Connection | The supplied endpoint, used for scanning and explicit submission |
+| Runtime and proving | Bundled engine, workers, and on-demand proving files |
+| Confirmations | 3 trusted and 3 untrusted; no zero-confirmation shielding |
+| Observation | Poll every 5 seconds; buffer up to 16 updates |
+| Spending and change | Ironwood only; transparent inputs disallowed |
+| Fee rule | ZIP-317 standard |
+| Transaction expiry | 80 blocks after the proposal's target height |
+| Proposal lock expiry | 20 blocks |
+| Shielding threshold | 10,000 zatoshis |
+| Freshness | Require a synced wallet, with no allowed block lag |
+| Startup recovery | Local/offline reconciliation; no automatic rebroadcast |
+
+The network preset supplies genesis and activation rules. The endpoint must match
+that network; the SDK does not auto-detect or silently switch chains.
+Ironwood-only defaults require Ironwood-capable funds and recipients. Other pools
+or transparent shielding require an explicit transaction policy.
+
+Call `wallet.sync()` before proposing a payment. Submission still requires a
+valid account, spending authority, and an explicit send/broadcast call.
+
+## Choose storage
+
+Storage is required: the SDK never silently chooses a temporary wallet.
+
+| Environment | Storage |
+| --- | --- |
+| Node | `{ kind: 'node-filesystem', path: './my-wallet' }` |
+| Browser | `{ kind: 'browser-opfs', name: 'my-wallet' }` |
+| Disposable session | `{ kind: 'memory' }` |
+
+Memory storage loses local wallet state and operation records after close.
+Back up recovery material separately. Only one owner should open a database at a
+time; conflicting ownership can fail with `STORAGE_BUSY`.
+Browser endpoints must support gRPC-Web and CORS. See [platforms](platforms.md).
+
+## Override configuration
+
+Pass a preset name, a registered `Network`, or a full `NetworkDefinition` as
+`network`. Configure the endpoint through `transportOptions`:
+
+```ts
+import { createWalletClient } from '@jp4g/zcash.js';
+
+export async function openWallet(endpoint: string) {
+  return createWalletClient(endpoint, {
+    network: 'testnet',
+    storage: { kind: 'node-filesystem', path: './my-wallet' },
+    transportOptions: { timeoutMs: 15000, sourceId: 'my-node' },
+    confirmations: { trusted: 5, untrusted: 5, allowZeroConfirmationShielding: false },
+    observation: { pollIntervalMs: 3000, maxBufferedUpdates: 16 },
   });
 }
 ```
 
-These limits are example budgets, not measured minimums or performance recommendations. Match your runtime, workload, and device capacity. The transaction policy deliberately allows owned transparent inputs; choose pools and change behavior appropriate to your application. Its confirmation policy must match the wallet's query policy.
+`runtime` accepts individual budget overrides. `confirmations`, `observation`,
+`recovery`, `proving`, and `transactionPolicy` accept their complete option
+objects. A supplied transaction policy also supplies the query confirmations
+unless `confirmations` is explicit; if both are provided, they must match.
+See [proposals](proposals.md) for transaction policy and [operations and
+recovery](operations.md) for recovery options.
 
-Choose storage explicitly:
+An explicit `runtime.baseline` selects a compatible authenticated runtime.
+Custom `proving` supplies reviewed asset requirements and a byte-loading callback;
+lengths and digests are checked. No remote proving service is supplied.
 
-| Environment | Storage |
-| --- | --- |
-| Node | `{ kind: 'node-filesystem', path: '/absolute/path/wallet.sqlite' }` |
-| Browser | `{ kind: 'browser-opfs', name: 'my-wallet' }` |
-| Disposable session | `{ kind: 'memory' }` |
+## Supply your own clients
 
-Memory storage cannot recover operations after restart. Only one owner should open a database at a time; conflicting ownership can fail with `STORAGE_BUSY`.
+For separate scanning and submission routes, offline wallets, or a custom
+transport, supply the components directly:
 
-## Understand the options
+```ts
+import { createWalletClient } from '@jp4g/zcash.js';
+import type { LightClient, WalletStorage } from '@jp4g/zcash.js';
 
-- `light` supplies scanning and startup observation. Opening is not a general sync.
-- `broadcaster` supplies submission. Providing only `light` does not enable broadcasting.
-- `transactionPolicy` enables proposals and send/shield planning.
-- `proving` supplies local proof material. Without it, reads still work, but a flow needing proofs can fail with `PROVING_MATERIAL_REQUIRED`.
-- `recovery: { mode: 'offline' }` reconciles recorded operations locally without startup network work. It does not disable later explicit `sync` or `send` calls.
+export function openReadOnly(light: LightClient, storage: WalletStorage) {
+  return createWalletClient({
+    network: light.network,
+    light,
+    storage,
+    confirmations: { trusted: 3, untrusted: 3, allowZeroConfirmationShielding: false },
+    observation: { pollIntervalMs: 5000, maxBufferedUpdates: 16 },
+    recovery: { mode: 'offline' },
+  });
+}
+```
 
-For proving, provide reviewed `AssetRequirement` entries and a `loadAsset({ requirement, signal })` callback returning their bytes. The SDK checks lengths and digests and supports memory or persistent asset caching. Proof assets are separate from the executable runtime manifest. There is no remote proving service supplied by the SDK.
+In this component form, `broadcaster` and `transactionPolicy` are explicit:
+omitting them leaves submission and planning unconfigured. Providing only
+`light` enables scanning, not broadcasting.
 
-Always await `wallet.close()` after use. Returned signers remain caller-owned and need their own `dispose()`. See the [walkthrough](walkthrough.md) for complete cleanup.
+Always await `wallet.close()`. Returned signers remain caller-owned and need
+their own `dispose()`. See the [walkthrough](walkthrough.md) for cleanup.

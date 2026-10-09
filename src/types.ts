@@ -18,11 +18,26 @@ export type NonEmpty<T> = readonly [T, ...T[]];
 export interface Op { readonly signal?: AbortSignal }
 export interface Disposable { dispose(): Promise<void> }
 
-/** Validated protocol descriptor; no built-in activation schedule is asserted. */
+export type BuiltinNetwork = 'mainnet' | 'testnet';
+/** Validated protocol descriptor, from a package preset or an explicit definition. */
 export interface Network {
   readonly [opaque]: 'network';
   readonly identity: string;
   readonly genesisHash: BlockHash;
+}
+/** Complete deployment consensus schedule. Null means an upgrade is inactive. */
+export interface NetworkParameters {
+  readonly encoding: 'main' | 'test' | 'regtest';
+  readonly Overwinter: number | null;
+  readonly Sapling: number | null;
+  readonly Blossom: number | null;
+  readonly Heartwood: number | null;
+  readonly Canopy: number | null;
+  readonly Nu5: number | null;
+  readonly Nu6: number | null;
+  readonly Nu6_1: number | null;
+  readonly Nu6_2: number | null;
+  readonly Nu6_3: number | null;
 }
 export interface NetworkDefinition {
   readonly identity: string;
@@ -30,6 +45,17 @@ export interface NetworkDefinition {
   /** Exact versioned consensus/encoding parameter document; schema is a G4 gate. */
   readonly parameters: Uint8Array;
   readonly parametersFormat: string;
+}
+/** Endpoint shorthand. Omitted network selects mainnet, never endpoint auto-detection. */
+export interface LightClientOptions {
+  readonly network?: BuiltinNetwork | Network | NetworkDefinition;
+  readonly transportOptions?: Partial<TransportOptions>;
+}
+/** JSON-RPC endpoint shorthand; transport and observation reads remain bounded. */
+export interface PublicClientOptions {
+  readonly network?: BuiltinNetwork | Network | NetworkDefinition;
+  readonly transportOptions?: Partial<TransportOptions>;
+  readonly observation?: Partial<ObservationOptions>;
 }
 export interface ConsensusContext {
   readonly network: Network;
@@ -341,7 +367,7 @@ export interface WalletOptions extends Op {
   readonly recovery?: RecoveryPolicy;
   readonly network: Network;
   readonly storage: WalletStorage;
-  readonly runtime: RuntimeOptions;
+  readonly runtime?: Partial<RuntimeOptions>;
   readonly confirmations: ConfirmationsPolicy; // applies to query accounting as well
   /** Omitted = no scan/startup observation route; never invent an endpoint. */
   readonly light?: LightClient;
@@ -349,9 +375,16 @@ export interface WalletOptions extends Op {
   readonly broadcaster?: PublicClient | LightClient;
   /** Omitted = no planning/send policy. Must match query confirmations. */
   readonly transactionPolicy?: TransactionPolicy;
-  /** Omitted = no local proving; a UFVK never substitutes for proving authority. */
+  /** Omitted = bundled local proving assets, loaded on demand. A UFVK never grants spending authority. */
   readonly proving?: LocalProvingOptions;
   readonly observation: ObservationOptions;
+}
+/** Connected wallet defaults; storage is always an explicit durability choice. */
+export interface WalletEndpointOptions extends
+  Omit<WalletOptions, 'network' | 'light' | 'broadcaster' | 'confirmations' | 'observation'>,
+  LightClientOptions {
+  readonly confirmations?: ConfirmationsPolicy;
+  readonly observation?: ObservationOptions;
 }
 
 export interface ViewKeyHandle extends Disposable {
@@ -412,6 +445,12 @@ export interface AccountsApi {
   get(args: { accountId: AccountId } & Op): Promise<AccountRecord | null>;
   /** Reject unresolved operations/locks; local history deletion cannot erase funds. */
   remove(args: { accountId: AccountId; acknowledge: 'deletes-local-history' } & Op): Promise<void>;
+  /** Restore caller-owned, unattached authority for an existing mnemonic-derived account.
+   * Verifies the mnemonic/passphrase against its viewing key without changing wallet history.
+   */
+  restoreSigner(
+    args: { accountId: AccountId; mnemonic: SecretInput; passphrase?: SecretInput } & Op,
+  ): Promise<MemorySigner>;
   attachSigner(args: { accountId: AccountId; signer: Signer } & Op): Promise<SignerBinding>;
   detachSigner(args: { accountId: AccountId } & Op): Promise<void>;
 }
