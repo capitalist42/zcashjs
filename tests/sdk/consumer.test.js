@@ -31,7 +31,7 @@ async function exec(command, args, options = {}) {
     await rm(folder, { recursive: true, force: true });
   }
 }
-const implemented = ['accountFromViewingKey', 'accountIndex', 'addresses', 'blockHash', 'createCustomSigner', 'createLightClient', 'createPublicClient', 'createWalletClient', 'createZcashClient', 'defineNetwork', 'diversifierIndex', 'encodeNetworkParameters', 'formatZec', 'grpc', 'httpTransport', 'isZcashError', 'parseZec', 'pczt', 'readGenesisHash', 'resolveBirthday', 'txId', 'viewing'];
+const implemented = ['accountFromViewingKey', 'accountIndex', 'addresses', 'blockHash', 'createCustomSigner', 'createLightClient', 'createPublicClient', 'createWalletClient', 'createZcashClient', 'defineNetwork', 'diversifierIndex', 'encodeNetworkParameters', 'formatZec', 'getConsensusContext', 'grpc', 'httpTransport', 'isZcashError', 'parseZec', 'pczt', 'readGenesisHash', 'resolveBirthday', 'txId', 'viewing'];
 
 test('packed release candidate imports and typechecks in an isolated Node consumer', async (t) => {
   const folder = await mkdtemp(join(tmpdir(), 'zcash-sdk-consumer-'));
@@ -188,10 +188,11 @@ test('packed release candidate imports and typechecks in an isolated Node consum
   }else t.diagnostic('Actual installed wallet check requires WALLET_RUNTIME_PACKAGE and trusted WALLET_TLS_CERT/WALLET_TLS_KEY.');
 
   await writeFile(join(consumer, 'consumer.ts'), `
-    import { parseZec, formatZec, txId, blockHash, accountIndex, diversifierIndex, httpTransport, grpc, createLightClient, createPublicClient, isZcashError, defineNetwork } from '@jp4g/zcash.js';
+    import { parseZec, formatZec, txId, blockHash, accountIndex, diversifierIndex, httpTransport, grpc, createLightClient, createPublicClient, isZcashError, defineNetwork, getConsensusContext } from '@jp4g/zcash.js';
     import type { TxId, BlockHash, AccountIndex, DiversifierIndex, HttpTransport, LightClient, ZcashError, Network, NetworkDefinition } from '@jp4g/zcash.js';
     const definition: NetworkDefinition = null!;
     const network: Promise<Network> = defineNetwork(definition);
+    const context: import('@jp4g/zcash.js').ConsensusContext = getConsensusContext({ network: null! as Network, targetHeight: 20 });
     const light: LightClient = createLightClient({ network: null! as Network, transport: grpc('https://synthetic.invalid', {
       sourceId: 'fixture', timeoutMs: 1000, readRetry: { attempts: 1, delayMs: 0 }, maxResponseBytes: 4096,
     }) });

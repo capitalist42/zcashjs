@@ -4,7 +4,7 @@ export { pczt } from './pczt.js';
 export { resolveBirthday } from './birthday.js';
 export { createPublicClient } from './public.js';
 export { accountFromViewingKey, viewing, addresses } from './viewing.js';
-export { defineNetwork } from './network.js';
+export { defineNetwork, getConsensusContext } from './network.js';
 export { encodeNetworkParameters } from './network-parameters.js';
 export { createLightClient } from './light.js';
 export { grpc } from './grpc.js';

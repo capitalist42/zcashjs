@@ -50,10 +50,40 @@ test('packed defineNetwork uses one lazy native capsule, owns input, and admits 
     const copy=binding.definition.parameters.bytes;copy.fill(0);
     assert.deepEqual(binding.definition.parameters.bytes,original);
     assert.deepEqual(binding.codec.consensusContext(binding.definition.parametersFormat,original,20),{height:20,branchId:0x76b809bb});
+    assert.deepEqual(sdk.getConsensusContext({network,targetHeight:20}),{network,targetHeight:20,branchId:0x76b809bb});
     assert.throws(()=>networkBinding({...network}),e=>e.code==='INVALID_ARGUMENT');
     const synthetic=new AbortController();synthetic.signal.dispatchEvent(new Event('abort'));
     assert.equal((await sdk.defineNetwork({...definition(),signal:synthetic.signal})).identity,network.identity);
     assert.equal(modules,1);assert.equal(instances,1);assert.equal(fetches,0);
     console.log(JSON.stringify({packed:scratch,modules,instances,fetches}));
   } finally {WebAssembly.Module=originalModule;WebAssembly.Instance=originalInstance;globalThis.fetch=originalFetch;}
+});
+
+test('public consensus context follows preset and custom activation boundaries', async () => {
+  const { defineNetwork, getConsensusContext } = await import('../../dist/src/index.js');
+  for (const [input, sapling, nu5] of [['mainnet', 419200, 1687104], ['testnet', 280000, 1842420], [definition(), 20, 60]]) {
+    const network = await defineNetwork(input);
+    for (const [height, before, after] of [[sapling, 0x5ba81b19, 0x76b809bb], [nu5, 0xe9ff75a6, 0xc2d6d0b4]]) {
+      for (const [targetHeight, branchId] of [[height - 1, before], [height, after]]) {
+        const context = getConsensusContext({ network, targetHeight });
+        assert.deepEqual(context, { network, targetHeight, branchId });
+        assert.equal(context.network, network); assert.ok(Object.isFrozen(context));
+      }
+    }
+    assert.equal(getConsensusContext({ network, targetHeight: 0 }).branchId, 0);
+    assert.equal(getConsensusContext({ network, targetHeight: 0xffffffff }).targetHeight, 0xffffffff);
+  }
+});
+
+test('public consensus context rejects invalid heights and forged inputs without invoking getters', async () => {
+  const { defineNetwork, getConsensusContext, isZcashError } = await import('../../dist/src/index.js');
+  const network = await defineNetwork(definition());
+  const reject = input => assert.throws(() => getConsensusContext(input), e => isZcashError(e) && e.code === 'INVALID_ARGUMENT');
+  for (const targetHeight of [-1, 1.5, 0x100000000, NaN, Infinity, '20', 20n, undefined]) reject({ network, targetHeight });
+  for (const value of [null, {}, { ...network }, new Proxy(network, {})]) reject({ network: value, targetHeight: 20 });
+  for (const input of [null, {}, { network, targetHeight: 20, branchId: 1 }]) reject(input);
+  let reads = 0;
+  reject({ network, get targetHeight() { reads++; throw Error('private input'); } });
+  const revoked = Proxy.revocable({}, {}); revoked.revoke(); reject(revoked.proxy);
+  assert.equal(reads, 0);
 });

@@ -7,6 +7,7 @@ Use the chapter links for examples. The [package entry point](https://github.com
 | Export | Purpose | Guide |
 | --- | --- | --- |
 | `defineNetwork`, `encodeNetworkParameters` | Validate and register network parameters | [Networks](networks-amounts.md) |
+| `getConsensusContext` | Derive consensus context from a registered network and target height | [Networks](networks-amounts.md) |
 | `parseZec`, `formatZec` | Exact ZEC/zatoshi conversion | [Amounts](networks-amounts.md) |
 | `accountIndex`, `diversifierIndex`, `txId`, `blockHash` | Validate typed identifiers | [Identifiers](networks-amounts.md) |
 | `httpTransport`, `readGenesisHash`, `createPublicClient` | JSON-RPC transport and public reads | [Public client](public-client.md) |

@@ -17,6 +17,10 @@ downloaded or inferred from your endpoint. Future upgrades require an updated
 SDK or an explicit matching definition. The normal light-client endpoint form
 creates this network for you; reuse `light.network` for the wallet.
 
+Use `getConsensusContext({ network, targetHeight })` to derive the branch ID from
+that network's schedule. It is synchronous and makes no network requests. Supply
+the intended transaction height; it does not choose a height or inspect PCZT bytes.
+
 For a custom deployment, supply the genesis hash and a complete typed schedule:
 
 ```ts

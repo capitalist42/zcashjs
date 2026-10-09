@@ -1,7 +1,7 @@
-import type { BuiltinNetwork, Network, NetworkDefinition, Op } from './types.js';
+import type { BuiltinNetwork, ConsensusContext, Network, NetworkDefinition, Op } from './types.js';
 import { networkPreset } from './network-presets.js';
 import { bindNetworkDefinition } from './network-parameters.js';
-import { ownBytes } from './clients/owned-plumbing.js';
+import { ownBytes, snapshot } from './clients/owned-plumbing.js';
 import { failure, invalidArgument, isZcashError } from './errors.js';
 
 type Codec = typeof import('./runtime/primitive-capsule.mjs');
@@ -80,6 +80,21 @@ export async function defineNetwork(args: BuiltinNetwork | (NetworkDefinition & 
   const network = Object.freeze({ identity: definition.identity, genesisHash: definition.genesisHash }) as Network;
   networks.set(network, Object.freeze({ definition, codec: native }));
   return network;
+}
+
+/** Derive consensus rules for an explicit height using the registered network schedule. */
+export function getConsensusContext(args: { network: Network; targetHeight: number }): ConsensusContext {
+  const { network, targetHeight } = snapshot(args, ['network', 'targetHeight']);
+  const { definition, codec: native } = networkBinding(network);
+  if (!Number.isInteger(targetHeight) || targetHeight < 0 || targetHeight > 0xffffffff) throw invalidArgument();
+  try {
+    const { branchId } = native.consensusContext(
+      definition.parametersFormat, definition.parameters.bytes, targetHeight,
+    );
+    return Object.freeze({ network, targetHeight, branchId });
+  } catch {
+    throw failure('RUNTIME_UNAVAILABLE', 'runtime', 'configure', 'Consensus context derivation failed.');
+  }
 }
 
 /** Internal instance admission; structurally similar user objects are not Networks. */
