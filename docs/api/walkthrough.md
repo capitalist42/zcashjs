@@ -72,7 +72,7 @@ async function waitForConfirmation(wallet: WalletClient, pending: PendingPayment
 }
 ```
 
-The confirmation helper runs scanning and payment observation together, propagates failure from either, and cancels and drains both before the wallet closes. It uses the lifecycle tested in the [runnable testnet example](https://github.com/jp4g/zcash.js/blob/main/examples/testnet/confirmation.mjs). The fifteen-minute deadline belongs to `pending.wait()`, preserving its operation ID and payment state on timeout. A timeout stops waiting; it does not cancel the payment.
+The confirmation helper runs scanning and payment observation together, propagates failure from either, and cancels and drains both before the wallet closes. It uses the lifecycle tested in the [runnable testnet example](https://github.com/zcashlabs/zcashjs/blob/main/examples/testnet/confirmation.mjs). The fifteen-minute deadline belongs to `pending.wait()`, preserving its operation ID and payment state on timeout. A timeout stops waiting; it does not cancel the payment.
 
 The application owns the mnemonic bytes and should clear them when its input flow no longer needs them. `approve` is your review UI: show every recipient, amount, fee, pool, expiry, and transaction step, and resolve only after the user's decision.
 

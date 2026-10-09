@@ -3,10 +3,10 @@
   "description": "Zcash JavaScript SDK with a bundled, lazily loaded wallet runtime and local proving assets.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jp4g/zcash.js.git"
+    "url": "git+https://github.com/zcashlabs/zcashjs.git"
   },
-  "bugs": "https://github.com/jp4g/zcash.js/issues",
-  "homepage": "https://github.com/jp4g/zcash.js#readme",
+  "bugs": "https://github.com/zcashlabs/zcashjs/issues",
+  "homepage": "https://github.com/zcashlabs/zcashjs#readme",
   "publishConfig": {
     "access": "public",
     "tag": "next",

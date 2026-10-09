@@ -1,6 +1,6 @@
 # API reference
 
-Use the chapter links for examples. The [package entry point](https://github.com/jp4g/zcash.js/blob/main/src/index.ts) lists actual exports; the [source contracts](https://github.com/jp4g/zcash.js/blob/main/src/types.ts) contain complete TypeScript shapes. Your editor reads the same declarations from the installed package.
+Use the chapter links for examples. The [package entry point](https://github.com/zcashlabs/zcashjs/blob/main/src/index.ts) lists actual exports; the [source contracts](https://github.com/zcashlabs/zcashjs/blob/main/src/types.ts) contain complete TypeScript shapes. Your editor reads the same declarations from the installed package.
 
 ## Package exports
 

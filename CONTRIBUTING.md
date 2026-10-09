@@ -14,7 +14,7 @@ npm run docs:check-recovery
 npm run docs:build
 ```
 
-Run checks relevant to the change. [tests/README.md](https://github.com/jp4g/zcash.js/blob/main/tests/README.md) explains native fixtures, actual browser runners, and optional runtime/proving workloads. Keep experiments and logs in ignored scratch directories. Do not use real funds or live private wallet data as test fixtures.
+Run checks relevant to the change. [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) explains native fixtures, actual browser runners, and optional runtime/proving workloads. Keep experiments and logs in ignored scratch directories. Do not use real funds or live private wallet data as test fixtures.
 
 ## API and documentation
 

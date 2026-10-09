@@ -8,8 +8,8 @@ SDK in an application, follow [Installation](installation.md) and install from n
 Use Node **22.12 or newer** and npm.
 
 ```sh
-git clone https://github.com/jp4g/zcash.js.git
-cd zcash.js
+git clone https://github.com/zcashlabs/zcashjs.git
+cd zcashjs
 npm ci
 npm run build
 npm run check

@@ -2,7 +2,7 @@
 
 An experimental TypeScript SDK for Zcash chain queries and local wallets on Node and browsers.
 
-**[Read the developer guide](https://jp4g.github.io/zcash.js/api/README.html)** · [First request](https://jp4g.github.io/zcash.js/api/installation.html) · [Wallet walkthrough](https://jp4g.github.io/zcash.js/api/walkthrough.html) · [API reference](https://jp4g.github.io/zcash.js/api/reference.html)
+**[Read the developer guide](docs/api/README.md)** · [First request](docs/api/installation.md) · [Wallet walkthrough](docs/api/walkthrough.md) · [API reference](docs/api/reference.md)
 
 ## What it provides
 
@@ -11,7 +11,7 @@ An experimental TypeScript SDK for Zcash chain queries and local wallets on Node
 - Local accounts, scanning, proposals, signing, submission, and recorded payment recovery through `createWalletClient`.
 - Exact bigint amounts, validated network/identifier values, viewing/address tools, and PCZT utilities.
 
-`@jp4g/zcash.js@0.1.0-rc.4` is the next experimental release candidate; registry publication remains owner-controlled. It includes codec capsules, the baseline wallet engine, workers, and local Sapling proving assets. Wallet execution loads the bundled engine automatically; proving assets load only when needed. Mainnet/testnet presets include genesis hashes and activation schedules; applications supply endpoints and storage. Custom network definitions remain supported. See [wallet setup](https://jp4g.github.io/zcash.js/api/wallet-runtime.html) and [platform limits](https://jp4g.github.io/zcash.js/api/platforms.html). Clean-package and testnet release qualification is tracked in [#165](https://github.com/jp4g/zcash.js/issues/165).
+`@jp4g/zcash.js@0.1.0-rc.4` is the next experimental release candidate; registry publication remains owner-controlled. It includes codec capsules, the baseline wallet engine, workers, and local Sapling proving assets. Wallet execution loads the bundled engine automatically; proving assets load only when needed. Mainnet/testnet presets include genesis hashes and activation schedules; applications supply endpoints and storage. Custom network definitions remain supported. See [wallet setup](docs/api/wallet-runtime.md) and [platform limits](docs/api/platforms.md).
 
 ```js
 import { createLightClient, createWalletClient } from '@jp4g/zcash.js';
@@ -38,7 +38,7 @@ npm ci
 npm run check
 ```
 
-`check` runs source lint, the TypeScript/capsule build, and Node tests. See [tests/README.md](https://github.com/jp4g/zcash.js/blob/main/tests/README.md) for actual browser checks and optional runtime/proving prerequisites. Use `npm pack` to build, verify bundled assets, and prepare a local package; see [installation](https://jp4g.github.io/zcash.js/api/installation.html).
+`check` runs source lint, the TypeScript/capsule build, and Node tests. See [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) for actual browser checks and optional runtime/proving prerequisites. Use `npm pack` to build, verify bundled assets, and prepare a local package; see [installation](docs/api/installation.md).
 
 ## Documentation
 
@@ -48,10 +48,10 @@ npm run docs:build
 npm run docs:dev
 ```
 
-The local guide runs at `http://127.0.0.1:4173/`. Its displayed TypeScript snippets are checked against the actual package entry point. GitHub Pages deploys automatically after checks pass on `main`. [Publishing instructions](https://jp4g.github.io/zcash.js/api/gitbook.html) also cover optional GitBook Git Sync using the same Markdown chapters.
+The local guide runs at `http://127.0.0.1:4173/`. Its displayed TypeScript snippets are checked against the actual package entry point. Once GitHub Pages is enabled for this repository, the workflow deploys after checks pass on `main`. [Publishing instructions](docs/api/gitbook.md) also cover optional GitBook Git Sync using the same Markdown chapters.
 
-[Contributing](https://github.com/jp4g/zcash.js/blob/main/CONTRIBUTING.md) describes the PR workflow. Retained planning and research live under `docs/planning` and `docs/research` in the repository; they do not override the implemented API and are not shipped in the npm package.
+[Contributing](https://github.com/zcashlabs/zcashjs/blob/main/CONTRIBUTING.md) describes the PR workflow. Retained planning and research live under `docs/planning` and `docs/research` in the repository; they do not override the implemented API and are not shipped in the npm package.
 
 ## License
 
-Project-owned code is [MIT licensed](https://github.com/jp4g/zcash.js/blob/main/LICENSE). Bundled dependencies retain their own licenses; preserve the [third-party notices](https://github.com/jp4g/zcash.js/blob/main/licenses/README.md) when redistributing JavaScript/WASM artifacts.
+Project-owned code is [MIT licensed](https://github.com/zcashlabs/zcashjs/blob/main/LICENSE). Bundled dependencies retain their own licenses; preserve the [third-party notices](https://github.com/zcashlabs/zcashjs/blob/main/licenses/README.md) when redistributing JavaScript/WASM artifacts.

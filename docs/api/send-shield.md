@@ -44,7 +44,7 @@ async function waitForConfirmation(wallet: WalletClient, pending: PendingPayment
 
 Assign a stable application request ID to one intended payment. Reuse that ID when recovering the same intent; generate a new ID only for a genuinely new payment. Conflicting reuse fails with `IDEMPOTENCY_CONFLICT`.
 
-The helper above consumes `watchSync()` while waiting, then cancels and drains both tasks. `pending.wait()` owns the fifteen-minute deadline so a timeout preserves its operation ID and payment state. It follows the [tested testnet helper](https://github.com/jp4g/zcash.js/blob/main/examples/testnet/confirmation.mjs). `pending.wait()` alone observes payment state; it does not scan your wallet.
+The helper above consumes `watchSync()` while waiting, then cancels and drains both tasks. `pending.wait()` owns the fifteen-minute deadline so a timeout preserves its operation ID and payment state. It follows the [tested testnet helper](https://github.com/zcashlabs/zcashjs/blob/main/examples/testnet/confirmation.mjs). `pending.wait()` alone observes payment state; it does not scan your wallet.
 
 `send` plans, executes, and dispatches, then returns a `PendingPayment`. It does not mean the transaction is mined. `wait` returns confirmation for every required transaction step, or rejects with a timeout/error and any available payment state.
 

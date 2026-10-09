@@ -48,7 +48,7 @@ and [Zcash genesis definitions](https://github.com/zcash/zcash/blob/master/src/c
 
 Advanced callers can still provide `parametersFormat: 'zcash-js-network/1'` and
 `parameters: Uint8Array` directly. This byte form retains strict validation.
-The parameter document is canonical UTF-8 JSON: `encoding` (`main`, `test`, or `regtest`), followed by `Overwinter`, `Sapling`, `Blossom`, `Heartwood`, `Canopy`, `Nu5`, `Nu6`, `Nu6_1`, `Nu6_2`, and `Nu6_3`, in that order. Each upgrade is a nondecreasing activation height or `null`; no activated upgrade may follow an inactive one. Whitespace, duplicate keys, and extra keys are rejected. Obtain the matching document from your deployment configuration; changing a label does not change consensus rules. The [validator](https://github.com/jp4g/zcash.js/blob/main/src/network-parameters.ts) defines the exact format.
+The parameter document is canonical UTF-8 JSON: `encoding` (`main`, `test`, or `regtest`), followed by `Overwinter`, `Sapling`, `Blossom`, `Heartwood`, `Canopy`, `Nu5`, `Nu6`, `Nu6_1`, `Nu6_2`, and `Nu6_3`, in that order. Each upgrade is a nondecreasing activation height or `null`; no activated upgrade may follow an inactive one. Whitespace, duplicate keys, and extra keys are rejected. Obtain the matching document from your deployment configuration; changing a label does not change consensus rules. The [validator](https://github.com/zcashlabs/zcashjs/blob/main/src/network-parameters.ts) defines the exact format.
 
 ## Bootstrap a local regtest endpoint
 

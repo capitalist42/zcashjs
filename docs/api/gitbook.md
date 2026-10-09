@@ -4,9 +4,9 @@ This guide uses ordinary Markdown and TypeScript fences, so the same chapters wo
 
 ## GitHub Pages
 
-The [hosted guide](https://jp4g.github.io/zcash.js/) deploys from `main` after the project checks pass. The existing workflow builds VitePress with `--base /zcash.js/`, uploads the static site, and deploys it to GitHub Pages. Repository Settings → Pages uses **GitHub Actions** as its source.
+The workflow targets `https://zcashlabs.github.io/zcashjs/` and deploys from `main` after the project checks pass once Pages is enabled. The existing workflow builds VitePress with `--base /zcashjs/`, uploads the static site, and deploys it to GitHub Pages. Enable Repository Settings → Pages with **GitHub Actions** as its source.
 
-To check the production build locally, run `npm run docs:build -- --base /zcash.js/`, then `npm run docs:preview -- --base /zcash.js/` and open `http://127.0.0.1:4173/zcash.js/`. An ordinary local build or dev server still uses `/`.
+To check the production build locally, run `npm run docs:build -- --base /zcashjs/`, then `npm run docs:preview -- --base /zcashjs/` and open `http://127.0.0.1:4173/zcashjs/`. An ordinary local build or dev server still uses `/`.
 
 ## Optional GitBook Git Sync
 
