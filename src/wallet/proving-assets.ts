@@ -1,12 +1,12 @@
 import type { AssetRequirement, LocalProvingOptions } from '../types.js';
 import { snapshot, ownBytes } from '../clients/owned-plumbing.js';
-import { failure, invalidArgument, isZcashError } from '../errors.js';
+import { errorMessage, failure, invalidArgument, isZcashError } from '../errors.js';
 import { operation } from '../clients/light-chain-reads.js';
 const fail = (code: 'ASSET_UNAVAILABLE' | 'ASSET_INTEGRITY' | 'RESOURCE_LIMIT') => failure(
   code,
   'proving',
   'configure',
-  'Local proving assets are unavailable or invalid.',
+  errorMessage(code),
 );
 // Canonical parameters: SHA256 pins cross-checked against zakura-proofs' BLAKE2b512 pins.
 export const saplingAssets = Object.freeze([

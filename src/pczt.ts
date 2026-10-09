@@ -3,7 +3,7 @@ import type { StandalonePczt } from './runtime/primitive-capsule.mjs';
 import { snapshot, ownBytes } from './clients/owned-plumbing.js';
 import { operation } from './clients/light-chain-reads.js';
 import { networkBinding } from './network.js';
-import { failure, invalidArgument, isZcashError } from './errors.js';
+import { errorMessage, failure, invalidArgument, isZcashError, errorTag } from './errors.js';
 const resource = () => failure('RESOURCE_LIMIT', 'validation', 'configure', 'PCZT exceeds configured limit.');
 const codes: readonly ErrorCode[] = [
   'INVALID_ARGUMENT',
@@ -17,12 +17,8 @@ const codes: readonly ErrorCode[] = [
 ];
 function mapped(error: unknown): never {
   if (isZcashError(error)) throw error;
-  const name = typeof error === 'string'
-    ? error
-    : error instanceof Error
-      ? Object.getOwnPropertyDescriptor(error, 'message')?.value
-      : undefined;
-  const code = codes.includes(name) ? name as ErrorCode : 'RUNTIME_UNAVAILABLE';
+  const name = errorTag(error);
+  const code = name !== undefined && codes.includes(name as ErrorCode) ? name as ErrorCode : 'RUNTIME_UNAVAILABLE';
   throw failure(
     code,
     code === 'RUNTIME_UNAVAILABLE' ? 'runtime' : 'validation',
@@ -31,7 +27,7 @@ function mapped(error: unknown): never {
       : code === 'RESOURCE_LIMIT' || code === 'RUNTIME_UNAVAILABLE'
         ? 'configure'
         : 'correct-input',
-    'PCZT operation failed.',
+    errorMessage(code),
   );
 }
 interface Owner { native: StandalonePczt | undefined; context: ConsensusContext; maximum: number }

@@ -939,6 +939,8 @@ export interface WalletClient {
 
 }
 
+/** ACCOUNT_BUSY, INVALID_AUTHORIZATION and REVIEW_MISMATCH are reserved for compatibility;
+ * the bundled runtime does not currently emit them. */
 export type ErrorCode = 'INVALID_ARGUMENT' | 'INVALID_MNEMONIC' | 'ENTROPY_UNAVAILABLE'
   | 'NETWORK_MISMATCH' | 'PROTOCOL_MISMATCH' | 'METHOD_NOT_SUPPORTED' | 'UNSUPPORTED_POOL'
   | 'UNSUPPORTED_VERSION' | 'TRANSPORT_ERROR' | 'OBSERVATION_UNAVAILABLE' | 'TARGET_PINNING_UNSUPPORTED'

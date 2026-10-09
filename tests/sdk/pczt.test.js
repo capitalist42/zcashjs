@@ -34,5 +34,20 @@ test('PCZT boundary owns context and independently disposes transformed values',
   const copied=await api.combine({pczts:aliases});await copied.dispose();assert.equal(lengthReads,0);
   const large=await api.parse({bytes:new Uint8Array(4*1024*1024+1),context:chain,maxBytes:5*1024*1024});await large.dispose();
   abortDuring=new AbortController();await assert.rejects(api.parse({bytes:new Uint8Array([1]),context:chain,maxBytes:2,signal:abortDuring.signal}),e=>e.code==='ABORTED');assert.equal(frees,4);
-  await combined.dispose();await redacted.dispose();assert.equal(frees,6);assert.equal(parses,3);
+  await combined.dispose();await redacted.dispose();assert.equal(frees,6);
+  for (const foreign of [
+    Object.defineProperty(new Error(), 'message', {get(){throw Error('PRIVATE_SENTINEL');}}),
+    new Proxy(new Error(), {getOwnPropertyDescriptor(){throw Error('PRIVATE_SENTINEL');}}),
+  ]) {
+    codec.parseStandalonePczt=()=>{throw foreign;};
+    await assert.rejects(api.parse({bytes:new Uint8Array([1]),context:chain,maxBytes:10}), error => {
+      assert.ok(errors.isZcashError(error)); assert.equal(error.code, 'RUNTIME_UNAVAILABLE');
+      assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /PRIVATE_SENTINEL/); return true;
+    });
+  }
+  codec.parseStandalonePczt=()=>{throw 'PCZT_ASSOCIATION_MISMATCH';};
+  await assert.rejects(api.parse({bytes:new Uint8Array([1]),context:chain,maxBytes:10}), error => {
+    assert.equal(error.code,'PCZT_ASSOCIATION_MISMATCH'); assert.match(error.message,/same transaction or wallet operation/);return true;
+  });
+assert.equal(parses,3);
 });

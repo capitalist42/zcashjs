@@ -313,3 +313,49 @@ test('worker rejects malformed signer payloads before calling native authority',
   assert.deepEqual(valid.outcome, { ok: true, value: { token: 1 } });
   assert.equal(calls, 1);
 });
+
+// Inject native tags at the port boundary; these do not execute native failure scenarios.
+for (const [tag, code, fatal, message] of [
+  ['ACCOUNT_KEY_MISMATCH', 'ACCOUNT_KEY_MISMATCH', true, /signing authority/],
+  ['PROTOCOL_MISMATCH', 'PROTOCOL_MISMATCH', true, /inconsistent/],
+  ['ACCOUNT_NOT_SPENDABLE', 'FULL_VIEWING_KEY_REQUIRED', true, /full viewing/],
+  ['UNSUPPORTED_STORED_ADDRESS', 'STORAGE_ERROR', true, /storage/],
+  ['MIGRATION_REQUIRED', 'MIGRATION_REQUIRED', true, /migration/],
+  ['UNSUPPORTED_HD_POOLS', 'UNSUPPORTED_POOL', false, /pool/],
+  ['SIGNER_MISMATCH', 'ACCOUNT_KEY_MISMATCH', false, /signing authority/],
+  ['INVALID_MNEMONIC', 'INVALID_MNEMONIC', false, /mnemonic/],
+  ['ENTROPY_UNAVAILABLE', 'ENTROPY_UNAVAILABLE', false, /randomness/],
+  ['ACCOUNT_NOT_FOUND', 'ACCOUNT_NOT_FOUND', false, /account/],
+  ['ACCOUNT_COLLISION', 'ACCOUNT_COLLISION', false, /already exists/],
+  ['ADDRESS_INDEX_REUSE', 'ADDRESS_ALREADY_EXPOSED', false, /index/],
+  ['INPUT_LOCKED', 'INPUT_LOCKED', false, /reserved/],
+  ['ASSET_UNAVAILABLE', 'ASSET_UNAVAILABLE', false, /proving asset/],
+  ['PAYMENT_BLOCKED', 'PAYMENT_BLOCKED', false, /dependency/],
+  ['TRANSACTION_EXPIRED', 'TRANSACTION_EXPIRED', false, /reconcile/],
+  ['SUBMISSION_REJECTED', 'SUBMISSION_REJECTED', false, /retained operation/],
+  ['SUBMISSION_UNKNOWN', 'SUBMISSION_UNKNOWN', false, /reconcile/],
+]) test(`native ${tag} retains classification and correct session lifetime`, async t => {
+  let calls = 0;
+  const {host} = local(t, () => { if (!calls++) throw Object.assign(Error(tag), {private: 'PRIVATE_SENTINEL'}); return []; });
+  await assert.rejects(host.accounts.list(), error => {
+    assert.ok(isZcashError(error)); assert.equal(error.code, code); assert.match(error.message, message);
+    assert.equal(error.recovery, fatal ? 'reopen' : 'correct-input');
+    assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /PRIVATE_SENTINEL/);
+    assert.equal(host.completion(error).completion, 'unknown'); return true;
+  });
+  if (fatal) await assert.rejects(host.accounts.list(), {code: 'CLOSED'});
+  else assert.deepEqual(await host.accounts.list(), []);
+  assert.equal(calls, fatal ? 1 : 2);
+});
+
+for (const importing of [true, false]) test(`missing authority ${importing ? 'rejects import without closing' : 'invalidates inconsistent stored authority'}`, async t => {
+  let calls = 0;
+  const {host} = local(t, () => {if (!calls++) throw 'MISSING_AUTHORITY'; return [];});
+  const request = importing ? host.accounts.import({viewingKey:'synthetic',birthday:'fullScan'}) : host.accounts.list();
+  await assert.rejects(request, error => {
+    assert.equal(error.code, 'RECEIVER_UNAVAILABLE'); assert.equal(error.recovery, importing ? 'correct-input' : 'reopen');
+    assert.match(error.message, /receiver/); return true;
+  });
+  if (importing) assert.deepEqual(await host.accounts.list(), []);
+  else await assert.rejects(host.accounts.list(), {code:'CLOSED'});
+});

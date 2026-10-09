@@ -43,8 +43,9 @@ test('terminal statuses support body/headers-only and never turn failed lookup i
       response = headersOnly ? reply('', { 'grpc-status': String(status), 'grpc-message': 'private-secret' })
         : reply(base64(trailer(`grpc-status: ${status}\r\ngrpc-message: private-secret\r\n`)));
       await assert.rejects(unary(create()), error => {
-        assert.equal(error.code, status === 12 ? 'METHOD_NOT_SUPPORTED' : 'TRANSPORT_ERROR');
+        assert.equal(error.code, ({1: 'ABORTED', 4: 'TIMEOUT', 8: 'RESOURCE_LIMIT', 12: 'METHOD_NOT_SUPPORTED'})[status] ?? 'TRANSPORT_ERROR');
         assert.equal(error.retryable, status === 4 || status === 14);
+        assert.equal(error.recovery, status === 1 || status === 4 ? 'none' : 'configure');
         assert.equal(isGrpcNotFound(error), status === 5);
         assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /private-secret/);
         return true;

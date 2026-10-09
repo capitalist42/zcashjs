@@ -2,7 +2,7 @@ import type { Birthday, LightClient, Op } from './types.js';
 import { networkBinding } from './network.js';
 import { snapshot, ownBytes } from './clients/owned-plumbing.js';
 import { operation } from './clients/light-chain-reads.js';
-import { failure, invalidArgument, isZcashError } from './errors.js';
+import { failure, invalidArgument, isZcashError, errorTag } from './errors.js';
 import { initialize } from './runtime/lightwire-capsule.mjs';
 const invalidBirthday = () => failure('PROTOCOL_MISMATCH', 'account', 'correct-input', 'Invalid birthday tree state.');
 const mismatch = () => failure('NETWORK_MISMATCH', 'account', 'correct-input', 'Birthday network mismatch.');
@@ -72,7 +72,7 @@ export async function resolveBirthday(
   } catch (error) {
     pending.check();
     if (isZcashError(error)) throw error;
-    const name = typeof error === 'string' ? error : error instanceof Error ? error.message : '';
+    const name = errorTag(error);
     throw name === 'NETWORK_MISMATCH' ? mismatch() : invalidBirthday();
   } finally {
     pending.close();

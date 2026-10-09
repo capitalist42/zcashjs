@@ -44,6 +44,20 @@ network presets, and canonical custom-network parameter requirements. Messages
 contain fixed SDK guidance, not supplied URLs, credentials, or secret values.
 Branch on `code`; message wording is diagnostic text, not a stable API.
 
+Viewing/address messages explain authority, receiver, consensus and search-limit
+failures. Some causes share a code: check the alternatives named in the message.
+
+Known wallet, PCZT and startup failures also provide fixed diagnostic guidance.
+A specific code does not guarantee the wallet remains open: follow `recovery`
+and inspect retained operation state. Node and gRPC-Web use `ABORTED`, `TIMEOUT`
+and `RESOURCE_LIMIT` for server cancellation, deadline and resource exhaustion.
+
+`STORAGE_QUOTA` identifies capacity failures recognized during storage acquisition;
+later native database writes may report `STORAGE_ERROR` instead.
+`ACCOUNT_BUSY`, `INVALID_AUTHORIZATION` and `REVIEW_MISMATCH` remain reserved for
+compatibility and are not currently emitted by the bundled runtime.
+
+
 ## Cancel a read
 
 ```ts

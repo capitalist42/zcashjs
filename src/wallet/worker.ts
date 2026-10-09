@@ -1,5 +1,5 @@
 import type { ErrorCode, ErrorInfo } from '../types.js';
-import { failure, isZcashError } from '../errors.js';
+import { errorMessage, failure, isZcashError, errorTag } from '../errors.js';
 import { WalletSession } from './session.js';
 import type { Completion, InitializedViews, InitializedSigners } from './session.js';
 
@@ -49,6 +49,13 @@ const nativeCodes: Record<string, ErrorCode> = {
   RECOVERY_REQUIRED: 'RECOVERY_REQUIRED',
   INVALID_MNEMONIC: 'INVALID_MNEMONIC',
   ENTROPY_UNAVAILABLE: 'ENTROPY_UNAVAILABLE',
+  ACCOUNT_KEY_MISMATCH: 'ACCOUNT_KEY_MISMATCH',
+  PROTOCOL_MISMATCH: 'PROTOCOL_MISMATCH',
+  MISSING_AUTHORITY: 'RECEIVER_UNAVAILABLE',
+  ACCOUNT_NOT_SPENDABLE: 'FULL_VIEWING_KEY_REQUIRED',
+  UNSUPPORTED_HD_POOLS: 'UNSUPPORTED_POOL',
+  UNSUPPORTED_STORED_ADDRESS: 'STORAGE_ERROR',
+  MIGRATION_REQUIRED: 'MIGRATION_REQUIRED',
   SIGNER_MISMATCH: 'ACCOUNT_KEY_MISMATCH',
   SIGNER_CAPABILITY_MISMATCH: 'SIGNER_CAPABILITY_MISMATCH',
   ACCOUNT_INDEX_EXHAUSTED: 'RESOURCE_LIMIT',
@@ -85,18 +92,18 @@ const nativeCodes: Record<string, ErrorCode> = {
 export const walletErrorCodes: ReadonlySet<string> = new Set([...Object.values(nativeCodes), 'RUNTIME_UNAVAILABLE']);
 
 function errorInfo(error: unknown, command: WalletCommand): { error: ErrorInfo; invalid: boolean } {
+  const tag = isZcashError(error) ? undefined : errorTag(error);
   let code: ErrorCode | undefined;
   if (isZcashError(error)) code = error.code;
-  else {
-    let name: unknown = error;
-    try {
-      if (typeof error === 'object' && error !== null) name = Object.getOwnPropertyDescriptor(error, 'message')?.value;
-    } catch { /* Foreign access failures reveal no text. */ }
-    if (typeof name === 'string' && Object.hasOwn(nativeCodes, name)) code = nativeCodes[name];
-  }
+  else if (tag !== undefined && Object.hasOwn(nativeCodes, tag)) code = nativeCodes[tag];
   const definition = commands[command];
   if (definition.proposal && code === 'CURSOR_STALE') code = 'STALE_PROPOSAL';
-  const invalid = code === undefined || code === 'STALE_HANDLE' && !definition.signer;
+  // Preserve conservative invalidation for native invariant/persisted-data failures.
+  // Missing authority during import is a rejected pool request, not damaged storage.
+  const invariant = ['ACCOUNT_KEY_MISMATCH', 'PROTOCOL_MISMATCH', 'ACCOUNT_NOT_SPENDABLE',
+    'UNSUPPORTED_STORED_ADDRESS', 'MIGRATION_REQUIRED'].includes(tag ?? '');
+  const invalid = code === undefined || invariant || code === 'STALE_HANDLE' && !definition.signer
+    || tag === 'MISSING_AUTHORITY' && command !== 'account_import';
   code ??= 'RUNTIME_UNAVAILABLE';
   const storage = ['STORAGE_ERROR', 'STORAGE_BUSY', 'MIGRATION_REQUIRED'].includes(code);
   const sync = definition.stage === 'sync';
@@ -117,7 +124,7 @@ function errorInfo(error: unknown, command: WalletCommand): { error: ErrorInfo; 
         : code === 'STALE_PROPOSAL'
           ? 'review-new-proposal'
           : code === 'ABORTED' || code === 'CLOSED' ? 'none' : 'correct-input';
-  return { error: { code, stage, recovery, retryable: false, message: 'Wallet operation failed.' }, invalid };
+  return { error: { code, stage, recovery, retryable: false, message: errorMessage(code) }, invalid };
 }
 
 /** Called only after the packaged worker initializes its actual Rust storage owner. */

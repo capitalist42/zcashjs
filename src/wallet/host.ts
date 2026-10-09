@@ -14,7 +14,7 @@ import type {
 } from './payment-journal-types.js';
 import type { AccountsApi, ConfirmationsPolicy, Op, ViewingImport, WalletAddressesApi, ZcashError } from '../types.js';
 import type { WalletClient } from '../types.js';
-import { failure, invalidArgument, isZcashError } from '../errors.js';
+import { errorMessage, failure, invalidArgument, isZcashError } from '../errors.js';
 import { saplingAssets } from './proving-assets.js';
 import { ownBytes, snapshot as fields } from '../clients/owned-plumbing.js';
 import { prepareCommand } from './command-inputs.js';
@@ -392,7 +392,7 @@ export function attachWalletWorker(port: MessagePort, destroy: () => Promise<voi
       const e = data.outcome.error;
       reject(
         job,
-        failure(e.code, e.stage, e.recovery, 'Wallet operation failed.', false),
+        failure(e.code, e.stage, e.recovery, errorMessage(e.code), false),
         { completion: data.completion },
       );
     }

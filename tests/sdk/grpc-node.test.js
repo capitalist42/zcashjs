@@ -208,3 +208,17 @@ test('browser condition excludes native entry and root dependency graph stays br
     build: { write: false, lib: { entry: 'probe', formats: ['es'] } } }),
     /No known conditions|Missing|Failed to resolve|Could not resolve|Cannot resolve/);
 });
+
+for (const [status, code, recovery, retryable] of [
+  [1, 'ABORTED', 'none', false],
+  [4, 'TIMEOUT', 'none', true],
+  [8, 'RESOURCE_LIMIT', 'configure', false],
+  [12, 'METHOD_NOT_SUPPORTED', 'configure', false],
+]) test(`server status ${status} uses the shared transport error policy`, async t => {
+  const create = await fixture(t, (_method, _call, callback) => callback({ code: status, details: 'PRIVATE_SENTINEL' }));
+  await assert.rejects(create().unary(args('GetLatestBlock')), error => {
+    assert.equal(error.code, code); assert.equal(error.recovery, recovery); assert.equal(error.retryable, retryable);
+    assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`, /PRIVATE_SENTINEL/);
+    return true;
+  });
+});

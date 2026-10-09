@@ -70,6 +70,7 @@ async function fixture({ finalized = true, steps = 1 } = {}) {
     { session },
     {
       attachedSigner() {
+        if (!finalized) return undefined;
         throw Error('finalized retry must not acquire signer');
       },
     },
@@ -275,4 +276,13 @@ test('custom role negotiation admits unproven signing before proving, without re
       }
     }
   }
+});
+
+test('missing signer retains the operation and never dispatches', async () => {
+  const {api,proposal,calls} = await fixture({finalized:false});
+  await assert.rejects(api.send({proposal}), error => {
+    assert.equal(error.code,'SIGNER_REQUIRED'); assert.equal(error.recovery,'reattach-signer');
+    assert.equal(error.operationId,proposal.operationId); return true;
+  });
+  assert.equal(calls.length,0);
 });

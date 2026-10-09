@@ -1,7 +1,7 @@
 import { nodeRuntime as node, stageWalletWorkers } from './worker-platform.js';
 import type { RuntimeWorker } from './worker-platform.js';
 import type { NetworkDefinition, Op, RuntimeOptions, WalletStorage, WasmArtifact, ZcashError } from '../types.js';
-import { failure, invalidArgument, isZcashError } from '../errors.js';
+import { errorMessage, failure, invalidArgument, isZcashError } from '../errors.js';
 import { bindNetworkDefinition } from '../network-parameters.js';
 import { admitSignal } from '../abort.js';
 import { copyRecord } from '../clients/owned-plumbing.js';
@@ -453,6 +453,7 @@ async function createOwner(
       const codes = [
         'STORAGE_ERROR',
         'STORAGE_BUSY',
+        'STORAGE_QUOTA',
         'NETWORK_MISMATCH',
         'INVALID_ARGUMENT',
         'RESOURCE_LIMIT',
@@ -469,7 +470,7 @@ async function createOwner(
               known,
               known.startsWith('STORAGE') || known === 'MIGRATION_REQUIRED' ? 'storage' : 'runtime',
               'configure',
-              'Wallet startup failed.',
+              errorMessage(known),
             )
           : unavailable(),
       );
