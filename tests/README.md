@@ -8,12 +8,10 @@ npm ci
 npm run check
 ```
 
-`check` runs ESLint, builds the current source into `dist/`, and runs every
-`tests/*/*.test.mjs` suite, with at most four test files running concurrently
-to bound native worker and bundler resource use. `npm test` does the same build and tests without
-linting; `npm run test:sdk` runs only the SDK subset. The first build fetches and compiles the pinned public native source with Rust;
-later builds reuse verified outputs. No manually prepared source tree, old build
-directory or live blockchain endpoint is needed.
+`check` runs lint, builds `dist/`, and runs `tests/*/*.test.mjs` with four files
+at a time. `npm test` omits lint; `npm run test:sdk` runs only SDK tests.
+The first build compiles Rust; later builds reuse verified native output.
+No live blockchain endpoint is needed.
 
 Native integration tests execute the pinned WASM in [fixtures/](fixtures/README.md).
 Missing or modified fixtures fail rather than silently skipping native coverage.

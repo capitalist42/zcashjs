@@ -1,6 +1,6 @@
 # Contributing
 
-Install the [source-build prerequisites](docs/api/building-locally.md). The repository contains the implemented experimental SDK, its tests, and a developer guide.
+Install the [source-build prerequisites](docs/api/building-locally.md).
 
 ## Workflow
 
@@ -32,4 +32,4 @@ Keep mnemonics, passphrases, spending/viewing keys, wallet databases, PCZTs, cre
 
 ## Distribution
 
-Package publication is a separate owner-controlled step. A local documentation build does not publish a package or a website. Retain the MIT license and third-party notices when distributing locally built artifacts.
+Maintainers handle publication. Retain the MIT license and third-party notices when distributing artifacts.
