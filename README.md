@@ -31,14 +31,20 @@ reopening are verified; these do not establish older-database compatibility.
 
 ## Build and test
 
-Use Node 22.12 or newer and npm.
+Source builds require Node/npm, Git, curl, rustup and a host C toolchain.
+Supported build hosts are macOS (Apple Silicon/Intel) and Linux x86_64; Windows
+uses WSL2. See the [build guide](https://github.com/zcashlabs/zcashjs/blob/main/docs/api/building-locally.md) for exact prerequisites.
 
 ```sh
 npm ci
+npm run build
 npm run check
 ```
 
-`check` runs source lint, the TypeScript/capsule build, and Node tests. See [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) for actual browser checks and optional runtime/proving prerequisites. Use `npm pack` to build, verify bundled assets, and prepare a local package; see [installation](https://github.com/zcashlabs/zcashjs/blob/main/docs/api/installation.md).
+`npm run build` produces the complete SDK, including native runtime and proving
+assets. The first build downloads pinned inputs and takes several minutes; repeat
+builds reuse verified native and proving caches. Generated output stays in ignored
+`dist/`. `check` runs source lint, the build, and Node tests. See [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) for actual browser checks and optional runtime/proving prerequisites. Use `npm pack` to build, verify bundled assets, and prepare a local package; see [installation](https://github.com/zcashlabs/zcashjs/blob/main/docs/api/installation.md).
 
 ## Documentation
 

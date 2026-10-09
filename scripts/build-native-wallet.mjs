@@ -1,66 +1,74 @@
-// Release-engine build: explicit source/tool locations, locked dependencies, no private paths.
+// Fetch and cache the pinned native SDK build. Rust owns native compilation.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, cpSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
-const revision = '9741e95a21e2314b3f817e3ed1427d17f919beb6';
-const bindgenSha256 = 'dc9e4f1e03996c26fb8bfedfded73d81120a37251c3f19eb87bb460f1f89a5be';
-assert.equal(process.argv.length, 6, 'usage: node scripts/build-native-wallet.mjs SOURCE WASI_SDK WASM_BINDGEN NEW_OUTPUT');
-const [source, sdk, bindgen, output] = process.argv.slice(2).map(value => resolve(value));
-const cargoHome = resolve(process.env.CARGO_HOME ?? join(homedir(), '.cargo'));
+const root = resolve(import.meta.dirname, '..');
+export const nativeSource = JSON.parse(readFileSync(join(import.meta.dirname, 'native-source.json')));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-const git = (...args) => execFileSync('git', ['-C', source, ...args], { encoding: 'utf8' }).trim();
-assert.equal(git('rev-parse', 'HEAD'), revision, 'pinned native revision');
-assert.equal(git('diff', 'HEAD', '--'), '', 'native tracked sources must be clean');
-assert.equal(sha(readFileSync(bindgen)), bindgenSha256, 'pinned wasm-bindgen executable');
-assert.equal(execFileSync(bindgen, ['--version'], { encoding: 'utf8' }).trim(), 'wasm-bindgen 0.2.128');
-assert.equal(sha(readFileSync(join(sdk, 'bin/clang'))), 'e78c818b321d834a20df5796afa9a9329dc53fd1f0a2597166c7a283b355be77', 'pinned WASI compiler');
-assert.equal(sha(readFileSync(join(sdk, 'share/wasi-sysroot/lib/wasm32-wasi/libc.a'))), '8e79a8b06402c7a8e93bbed56a17b4827c81e29451f73c3f47669a7ea7494006', 'pinned WASI libc');
-assert.equal(execFileSync('rustc', ['--version'], { encoding: 'utf8' }).trim(), 'rustc 1.98.1 (48a229cea 2026-09-01)', 'pinned Rust compiler');
-mkdirSync(output); // Exclusive destination; never overwrite an existing build.
-const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
-  !/^(RUSTFLAGS|CARGO_ENCODED_RUSTFLAGS|CARGO_TARGET_DIR|CARGO_BUILD_RUSTFLAGS|CC|CXX|AR|LD|RANLIB|CFLAGS|LIBSQLITE|WALLET_)/.test(key)));
-Object.assign(env, { CARGO_TARGET_DIR: join(output, 'target'), CARGO_BUILD_JOBS: '2' });
-const run = (command, args, options = {}) => execFileSync(command, args, { cwd: source, env, stdio: 'inherit', maxBuffer: 32 * 1024 * 1024, ...options });
-const metadata = JSON.parse(run('cargo', ['metadata', '--locked', '--offline', '--features', 'wallet-storage', '--format-version', '1'], { encoding: 'utf8', stdio: 'pipe' }));
-const verifiedPackages = JSON.parse(run('python3', [join(import.meta.dirname, 'verify-native-inputs.py'), source, output], {
-  encoding: 'utf8', stdio: 'pipe', input: JSON.stringify(metadata),
-}));
-const sqlite = metadata.packages.find(pkg => pkg.name === 'libsqlite3-sys');
-assert.ok(sqlite, 'locked SQLite dependency');
-Object.assign(env, {
-  WALLET_SDK: sdk,
-  WALLET_SQLITE: join(sqlite.manifest_path, '..', 'sqlite3'),
-  CC_wasm32_unknown_unknown: join(sdk, 'bin/clang'),
-  AR_wasm32_unknown_unknown: join(sdk, 'bin/llvm-ar'),
-  CFLAGS_wasm32_unknown_unknown: `--target=wasm32-wasi --sysroot=${sdk}/share/wasi-sysroot -DSQLITE_OS_OTHER=1 -USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0 -DSQLITE_TEMP_STORE=3 -DSQLITE_OMIT_LOAD_EXTENSION=1`,
-  LIBSQLITE3_FLAGS: '-DSQLITE_ENABLE_MEMSYS5 -DSQLITE_ZERO_MALLOC -DLONGDOUBLE_TYPE=double -DSQLITE_OMIT_WAL',
-  RUSTFLAGS: `--remap-path-prefix=${source}=/source --remap-path-prefix=${cargoHome}=/cargo -C link-arg=--max-memory=268435456`,
-});
-run('cargo', ['build', '--locked', '--offline', '--release', '--target', 'wasm32-unknown-unknown', '--features', 'wallet-storage', '--lib']);
-const bundle = join(output, 'bundle');
-run(bindgen, ['--target', 'web', '--keep-lld-exports', '--out-dir', bundle, '--out-name', 'bindings', join(output, 'target/wasm32-unknown-unknown/release/zakura_network_bindings.wasm')]);
-for (const name of ['bytes.mjs', 'wallet.mjs', 'views.mjs', 'network.mjs', 'transaction.mjs']) copyFileSync(join(source, name), join(bundle, name));
-cpSync(join(source, 'wallet-host'), join(bundle, 'wallet-host'), { recursive: true });
-const inspection = run('node', ['tests/wallet-inspect.mjs', bundle], { encoding: 'utf8', stdio: 'pipe' });
-assert.equal(JSON.parse(inspection).pass, true);
-const inventory = directory => Object.fromEntries(readdirSync(directory, { recursive: true, withFileTypes: true })
-  .filter(entry => entry.isFile()).map(entry => {
-    const path = join(entry.parentPath, entry.name);
-    return [path.slice(directory.length + 1), sha(readFileSync(path))];
-  }).sort(([a], [b]) => a.localeCompare(b)));
-writeFileSync(join(output, 'build.json'), JSON.stringify({
-  format: 'zcash-js-native-build/1', revision, tree: git('rev-parse', 'HEAD^{tree}'),
-  lockSha256: sha(readFileSync(join(source, 'Cargo.lock'))),
-  nativePolicy: JSON.parse(readFileSync(join(source, 'native-policy/vendor/receipt.json'))),
-  packages: verifiedPackages,
-  rustc: run('rustc', ['-Vv'], { encoding: 'utf8', stdio: 'pipe' }),
-  producerSha256: sha(readFileSync(import.meta.filename)),
-  environment: Object.fromEntries(Object.entries(env).filter(([key]) => /^(RUSTFLAGS|CARGO_BUILD_JOBS|CC_|AR_|CFLAGS_|LIBSQLITE|WALLET_)/.test(key))),
-  bindgenSha256, sdkClangSha256: sha(readFileSync(join(sdk, 'bin/clang'))),
-  inspection: JSON.parse(inspection), artifacts: inventory(bundle),
-}, null, 2) + '\n', { flag: 'wx' });
-console.log(`Built native wallet: ${output}`);
+
+export function verifyNativeBuild(output) {
+  const receipt = JSON.parse(readFileSync(join(output, 'build.json')));
+  assert.equal(receipt.format, 'zcash-js-native-build/1');
+  assert.equal(receipt.complete, true, 'incomplete native build');
+  assert.equal(receipt.revision, nativeSource.revision, 'stale native revision');
+  const verify = (directory, artifacts) => {
+    assert.ok(artifacts && Object.keys(artifacts).length, 'missing native artifact inventory');
+    for (const [name, hash] of Object.entries(artifacts)) {
+      assert.ok(!name.includes('..') && !name.startsWith('/'), 'invalid native artifact path');
+      assert.equal(sha(readFileSync(join(directory, name))), hash, `native artifact checksum: ${name}`);
+    }
+  };
+  verify(join(output, 'bundle'), receipt.artifacts);
+  verify(join(output, 'primitive'), receipt.primitiveArtifacts);
+  for (const name of ['lightwire', 'transparent-address']) {
+    const bytes = readFileSync(join(output, name, 'receipt.json'));
+    assert.equal(sha(bytes), receipt.codecs[name], `native codec receipt: ${name}`);
+    const codec = JSON.parse(bytes);
+    assert.equal(codec.status, 'built', `incomplete codec: ${name}`);
+    verify(join(output, name), codec.artifacts);
+  }
+  return receipt;
+}
+
+export function buildNative() {
+  assert.match(nativeSource.revision, /^[a-f0-9]{40}$/);
+  const cache = join(root, '.cache/native');
+  const directory = join(cache, nativeSource.revision);
+  const source = join(directory, 'source');
+  const output = join(directory, 'sdk');
+  const git = (...args) => execFileSync('git', ['-C', source, ...args], { encoding: 'utf8' }).trim();
+  if (!existsSync(source)) {
+    mkdirSync(source, { recursive: true });
+    git('init', '--quiet');
+    git('remote', 'add', 'origin', nativeSource.repository);
+    git('fetch', '--depth', '1', 'origin', nativeSource.revision);
+    git('checkout', '--detach', 'FETCH_HEAD');
+  }
+  assert.equal(git('rev-parse', 'HEAD'), nativeSource.revision, `remove stale native checkout: ${source}`);
+  assert.equal(git('status', '--porcelain', '--untracked-files=no'), '', `modified native checkout: ${source}`);
+  if (!existsSync(join(output, 'build.json'))) {
+    // This directory is owned by the build; an interrupted attempt has no receipt.
+    rmSync(output, { recursive: true, force: true });
+    console.log('Building native components; the first build takes several minutes.');
+    execFileSync('cargo', ['xtask', 'build', '--output', output, '--cache', join(cache, 'cache')],
+      { cwd: source, stdio: 'inherit' });
+  } else {
+    console.log('Verifying cached native build.');
+  }
+  const receipt = verifyNativeBuild(output);
+  assert.equal(receipt.tree, git('rev-parse', 'HEAD^{tree}'), 'native source tree');
+  assert.equal(receipt.lockSha256, sha(readFileSync(join(source, 'Cargo.lock'))), 'native dependency lock');
+  return { source, output };
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try { buildNative(); }
+  catch (error) {
+    console.error(`Native build failed: ${error.message}\nSee docs/api/building-locally.md for prerequisites and cache recovery.`);
+    process.exitCode = 1;
+  }
+}

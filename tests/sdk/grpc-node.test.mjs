@@ -199,7 +199,7 @@ test('browser condition excludes native entry and root dependency graph stays br
   assert.equal(pkg.exports['./grpc-node'].import, undefined);
   // Resolve with browser conditions and without Node conditions using installed Vite.
   const output = await build({ configFile: false, logLevel: 'silent', build: {
-    write: false, lib: { entry: 'src/index.ts', formats: ['es'] }, minify: false } });
+    write: false, lib: { entry: 'dist/src/index.js', formats: ['es'] }, minify: false } });
   const code = [output].flat().flatMap(result => result.output).map(item => item.code ?? '').join('');
   assert.doesNotMatch(code, /grpc-js|node:http2|node:net/);
   await assert.rejects(build({ configFile: false, logLevel: 'silent', resolve: { conditions: ['browser'] },

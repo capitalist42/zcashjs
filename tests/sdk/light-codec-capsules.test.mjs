@@ -14,11 +14,12 @@ test('packed light codecs are lazy, native, owned and bound to their capsule rec
   execFileSync('tar',['-xzf',join(scratch,packed.filename),'-C',join(scratch,'unpacked')]);
   const runtime=join(scratch,'unpacked/package/dist/src/runtime');
   const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-  for(const name of ['lightwire','transparent-address']) {
+  for(const name of ['primitive','lightwire','transparent-address']) {
     const receipt=JSON.parse(await readFile(join(runtime,`${name}-capsule.json`),'utf8'));
+    assert.equal(receipt.nativeRevision,JSON.parse(await readFile(join(root,'scripts/native-source.json'))).revision);
     assert.equal(sha(await readFile(join(runtime,`${name}-capsule.mjs`))),receipt.sha256);
-    assert.equal(sha(await readFile(join(root,'tests/fixtures/capsule-build/primitive-capsule.mjs'))),receipt.generatorSha256);
-    assert.equal(sha(await readFile(join(root,'tests/fixtures/capsule-build/package-lock.json'))),receipt.lockSha256);
+    assert.equal(sha(await readFile(join(root,'scripts/primitive-capsule.mjs'))),receipt.generatorSha256);
+    assert.equal(sha(await readFile(join(root,'package-lock.json'))),receipt.lockSha256);
   }
   let instances=0;
   const original=WebAssembly.Instance,originalFetch=globalThis.fetch;

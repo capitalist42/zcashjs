@@ -21,7 +21,7 @@
     "docs:preview": "vite preview --outDir docs/.vitepress/dist --host 127.0.0.1 --port 4173 --strictPort --base /",
     "docs:typecheck": "tsc -p docs/api/examples/tsconfig.json && node scripts/check-guide.mjs",
     "docs:check-recovery": "node docs/api/check-recovery-spec.mjs",
-    "build": "tsc -p tsconfig.json && node scripts/primitive-capsule.mjs && node scripts/bundled-assets.mjs",
+    "build": "node scripts/build.mjs",
     "prepack": "npm run build",
     "test:sdk": "npm run build && node --test tests/sdk/*.test.mjs",
     "test": "npm run build && node --test --test-concurrency=4 tests/*/*.test.mjs",

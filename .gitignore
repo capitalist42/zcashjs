@@ -69,3 +69,10 @@ Thumbs.db
 # VitePress generated documentation output
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+
+# Production runtime assets are generated under dist/ by npm run build.
+# Ignore legacy output locations too; keep the handwritten .d.mts interfaces.
+/src/runtime/assets/
+/src/runtime/*-capsule.mjs
+/src/runtime/*-capsule.json
+/src/runtime/bundled-assets.mjs

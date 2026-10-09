@@ -1,6 +1,7 @@
 # Running tests
 
-For development use Node ^22.13.0 or >=24, as required by ESLint. From a fresh checkout:
+For development use Node ^22.13.0 or >=24, as required by ESLint, and the
+[source-build prerequisites](../docs/api/building-locally.md). From a fresh checkout:
 
 ```sh
 npm ci
@@ -10,8 +11,9 @@ npm run check
 `check` runs ESLint, builds the current source into `dist/`, and runs every
 `tests/*/*.test.mjs` suite, with at most four test files running concurrently
 to bound native worker and bundler resource use. `npm test` does the same build and tests without
-linting; `npm run test:sdk` runs only the SDK subset. No external source tree,
-old build directory, Rust compiler, or live blockchain endpoint is needed.
+linting; `npm run test:sdk` runs only the SDK subset. The first build fetches and compiles the pinned public native source with Rust;
+later builds reuse verified outputs. No manually prepared source tree, old build
+directory or live blockchain endpoint is needed.
 
 Native integration tests execute the pinned WASM in [fixtures/](fixtures/README.md).
 Missing or modified fixtures fail rather than silently skipping native coverage.
