@@ -1,15 +1,15 @@
 # API reference
 
-Use the chapter links for examples. The [package entry point](https://github.com/jp4g/zcash.js/blob/main/src/index.ts) lists actual exports; the [source contracts](https://github.com/jp4g/zcash.js/blob/main/src/types.ts) contain complete TypeScript shapes. Your editor reads the same declarations from the installed package.
+Use the chapter links for examples. The [package entry point](https://github.com/zcashlabs/zcashjs/blob/main/src/index.ts) lists actual exports; the [source contracts](https://github.com/zcashlabs/zcashjs/blob/main/src/types.ts) contain complete TypeScript shapes. Your editor reads the same declarations from the installed package.
 
 ## Package exports
 
 | Export | Purpose | Guide |
 | --- | --- | --- |
-| `defineNetwork` | Validate and register network parameters | [Networks](networks-amounts.md) |
+| `defineNetwork`, `encodeNetworkParameters` | Validate and register network parameters | [Networks](networks-amounts.md) |
 | `parseZec`, `formatZec` | Exact ZEC/zatoshi conversion | [Amounts](networks-amounts.md) |
 | `accountIndex`, `diversifierIndex`, `txId`, `blockHash` | Validate typed identifiers | [Identifiers](networks-amounts.md) |
-| `http`, `createPublicClient` | JSON-RPC transport and public reads | [Public client](public-client.md) |
+| `httpTransport`, `readGenesisHash`, `createPublicClient` | JSON-RPC transport and public reads | [Public client](public-client.md) |
 | `grpc`, `createLightClient` | Lightwallet transport and reads | [Light client](light-client.md) |
 | `createWalletClient` | Open the local wallet and recover recorded work | [Wallet setup](wallet-runtime.md) |
 | `createZcashClient` | Group existing same-network clients | [Introduction](README.md) |
@@ -18,13 +18,13 @@ Use the chapter links for examples. The [package entry point](https://github.com
 | `createCustomSigner`, `pczt` | Signer integration and standalone PCZT tools | [Signing](signing.md) |
 | `isZcashError` | Narrow a structured SDK failure | [Errors](errors-lifecycle.md) |
 
-`zcash.js/grpc-node` additionally exports `createGrpcNodeTransport` for explicit Node byte-transport use.
+`@jp4g/zcash.js/grpc-node` additionally exports `createGrpcNodeTransport` for explicit Node byte-transport use.
 
 ## Wallet methods
 
 | Group | Methods | Effect |
 | --- | --- | --- |
-| `accounts` | `create`, `import`, `list`, `get`, `remove`, `attachSigner`, `detachSigner` | Local account records and signer bindings |
+| `accounts` | `create`, `import`, `list`, `get`, `remove`, `attachSigner`, `restoreSigner`, `detachSigner` | Local account records and signer bindings |
 | `addresses` | `current`, `next`, `list`, `at` | Read or record receive-address exposure |
 | Planning | `propose` | Retain an immutable proposal and its locks |
 | Execution | `send`, `shield` | Plan/execute and explicitly dispatch payment work |

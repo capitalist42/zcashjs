@@ -3,16 +3,18 @@
 ## Issue an address from a wallet
 
 ```ts
-import type { AccountRecord, WalletClient } from 'zcash.js';
+import type { AccountRecord, WalletClient } from '@jp4g/zcash.js';
 
 export async function receiveAddress(wallet: WalletClient, account: AccountRecord) {
   const issued = await wallet.addresses.next({
     accountId: account.id,
-    request: { format: 'unified', transparent: 'omit', sapling: 'require', ironwood: 'require' },
+    request: { format: 'unified', transparent: 'omit', sapling: 'omit', ironwood: 'require' },
   });
   return issued.address;
 }
 ```
+
+This Ironwood-only address matches the endpoint wallet’s default spending policy. Request additional receivers only when your spending policy and network support those pools. Omitting receiver requirements still exposes all supported receivers; the SDK default is unchanged.
 
 `next` commits address exposure before returning. Display the returned string in your receive UI or QR code. `current({ accountId, request })` is a local read returning a string or `null`; it does not allocate an address. `list` returns issued records. `at({ accountId, index, request })` exposes an exact derivation index and is a write.
 
@@ -21,8 +23,8 @@ Use `{ format: 'transparent' }` for a transparent address. Explicit unified rece
 ## Derive without a wallet database
 
 ```ts
-import { accountFromViewingKey, addresses, diversifierIndex } from 'zcash.js';
-import type { Network } from 'zcash.js';
+import { accountFromViewingKey, addresses, diversifierIndex } from '@jp4g/zcash.js';
+import type { Network } from '@jp4g/zcash.js';
 
 export async function deriveAddress(network: Network, encoded: string) {
   const account = await accountFromViewingKey({
@@ -50,8 +52,8 @@ Standalone derivation does not record address exposure in a wallet. Prefer walle
 Use a real consensus context, such as the context of a reviewed proposal.
 
 ```ts
-import { addresses } from 'zcash.js';
-import type { ConsensusContext, Pool } from 'zcash.js';
+import { addresses } from '@jp4g/zcash.js';
+import type { ConsensusContext, Pool } from '@jp4g/zcash.js';
 
 export async function receiver(context: ConsensusContext, encoded: string, pool: Pool) {
   const address = await addresses.decode({ network: context.network, address: encoded });

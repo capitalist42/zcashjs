@@ -12,9 +12,11 @@ import type {
 import { failure, invalidArgument, isZcashError } from '../errors.js';
 import { blockHash } from '../primitives.js';
 import { ownBytes } from './owned-plumbing.js';
+import { matchesLightNetwork } from './light-server-observation.js';
 
 // Structural view of the accepted initialized codec instance; no acquisition or initialization.
 interface Lightwire {
+  encodeTreeState(json: string): Uint8Array;
   encodeRequest(method: 'GetLatestBlock' | 'GetBlockRange' | 'GetTreeState', json: string): Uint8Array;
   decodeResponse(method: 'GetLatestBlock' | 'GetTreeState', bytes: Uint8Array): unknown;
   decodeItem(method: 'GetBlockRange', bytes: Uint8Array): unknown;
@@ -275,7 +277,7 @@ export async function getTreeState(codec: Lightwire, transport: CustomLightTrans
       Reflect.apply(unary, transport, [{ method: 'GetTreeState', request, signal: pending.signal }]),
     );
     pending.check();
-    const encoded = ownBytes(response, protocol, resourceLimit);
+    let encoded = ownBytes(response, protocol, resourceLimit);
     let dto: { network: string; height: string; hash: string; sapling_tree: string; ironwood_tree: string };
     try {
       dto = codec.decodeResponse('GetTreeState', encoded) as typeof dto;
@@ -288,7 +290,7 @@ export async function getTreeState(codec: Lightwire, transport: CustomLightTrans
       || BigInt(dto.height) > 0xffff_ffffn
       || typeof dto.hash !== 'string'
       || !/^[0-9a-f]{64}$/.test(dto.hash)) throw protocol();
-    if (dto.network !== encoding) {
+    if (!matchesLightNetwork(dto.network, encoding)) {
       throw failure(
         'NETWORK_MISMATCH',
         'query',
@@ -314,6 +316,15 @@ export async function getTreeState(codec: Lightwire, transport: CustomLightTrans
     };
     const sapling = tree(dto.sapling_tree),
       ironwood = tree(dto.ironwood_tree);
+    // Native birthday/scan validation expects the configured encoding, not its wire alias.
+    // Re-encode through the pinned codec; retain all decoded fields and all chain checks.
+    if (dto.network !== encoding) {
+      try {
+        encoded = codec.encodeTreeState(JSON.stringify({ ...dto, network: encoding }));
+      } catch {
+        throw protocol();
+      }
+    }
     pending.check();
     return { network, point, sapling, ironwood, encoded, sourceId, observedAt: new Date().toISOString() };
   } catch (error) {

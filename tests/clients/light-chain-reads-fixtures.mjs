@@ -72,7 +72,7 @@ export async function serveChainFixtures(assets = new Map(), { signal, onCreate,
       }
       if (url.pathname.endsWith('GetTreeState')) {
         const textField = (field, text) => bytesField(field, new TextEncoder().encode(text));
-        items = [concat(textField(1, mode === 'tree-network' ? 'test' : 'regtest'),
+        items = [concat(textField(1, mode === 'tree-network' ? 'main' : 'regtest'),
           scalar(2, mode === 'tree-height' ? 8 : 7), textField(3, display(hash)), textField(5, '000000'))];
       }
       if (mode === 'stall' || mode === 'tree-stall') { res.write(base64(frame(items[0]))); return; }

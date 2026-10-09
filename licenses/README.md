@@ -2,7 +2,7 @@
 
 The project-owned SDK, bindings, C adapter and codec wrappers are licensed under the root MIT [LICENSE](../LICENSE). Third-party code retains the grants and conditions below; the project license does not relicense it.
 
-Keep this directory and the root LICENSE with redistributed JavaScript/WASM artifacts. The runtime manifest describes executable assets; these notices are accompanying distribution files, not executable assets to load into a worker.
+Keep this directory and the root LICENSE with redistributed JavaScript/WASM artifacts. The SDK ships one copy here; its bundled-asset inventory verifies the runtime notices at these root paths. Standalone runtime distributions retain their own accompanying notices. The runtime manifest describes executable assets; these notices are accompanying distribution files, not executable assets to load into a worker.
 
 - `NATIVE.txt` and `native-sources.json`: all 257 third-party crates from the current wallet producer's Cargo metadata, including conservative host/build/target-only coverage. This also covers every registry package/version in the standalone lightwire and transparent-address locks. It does not claim every listed crate is linked.
 - `PLATFORM.txt`: WASI SDK 27.0, wasi-libc, LLVM/compiler-rt and SQLite notices, preserving their MIT, Apache, BSD and LLVM-exception conditions. SQLite's copyright dedication is separate from its Rust wrapper license.
@@ -11,7 +11,7 @@ Keep this directory and the root LICENSE with redistributed JavaScript/WASM arti
 
 For dual or multiple grants, the native manifest explicitly records the selected permissive option. The two Zakura packages without their own packaged license files select their declared Apache-2.0 option and reproduce that license from the same fork revision; authors and source identities are retained. The `r-efi` MIT grant and copyright are in its original AUTHORS file. The conjunctive Unicode-3.0 obligation is retained. No LGPL option is selected.
 
-No proving-parameter blobs or server executables are distributed here. Public proving loads assets supplied through the caller's `loadAsset` callback. Network-definition bytes are distinct from proving material. If a distributor separately bundles proving assets, documentation-site dependencies or other applications, their additional distribution terms must be included with those assets.
+The package now includes the canonical Sapling proving-parameter files. Their provenance and redistribution notices are retained in `SAPLING-PARAMETERS.md`, `SAPLING-PARAMETERS-MIT.txt`, and `SAPLING-PARAMETERS-APACHE.txt`. They load lazily by default; an application may override loading through its `loadAsset` callback. No server executables are distributed. Network-definition bytes are distinct from proving material. Additional applications or documentation-site dependencies require their own applicable notices.
 
 This inventory applies to the retained baseline wallet package and current threaded package03, plus the embedded SDK codecs. It is an engineering license/notice reconciliation, not a change to the dependencies or an authorization to publish. Future dependency or artifact changes require corresponding notice updates.
 

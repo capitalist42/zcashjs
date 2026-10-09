@@ -1,23 +1,33 @@
 import { addressInput, broadcastInput } from './clients/request-inputs.js';
-import type { CustomLightTransport, GrpcTransport, LightClient, Network, Op } from './types.js';
-import { networkBinding } from './network.js';
-import { grpcAdapter, grpcBinding } from './grpc.js';
+import type {
+  CustomLightTransport, GrpcTransport, LightClient, LightClientOptions, Network, NetworkDefinition, Op,
+} from './types.js';
+import { defineNetwork, networkBinding } from './network.js';
+import { grpc, grpcAdapter, grpcBinding } from './grpc.js';
 import { failure, invalidArgument } from './errors.js';
 import { snapshot } from './clients/owned-plumbing.js';
 import { ownCustomLightTransport } from './clients/custom-light.js';
 import * as chain from './clients/light-chain-reads.js';
 import * as transactions from './clients/light-transaction-reads.js';
 import * as transparent from './clients/light-transparent-reads.js';
-import { readLightdInfo } from './clients/light-server-observation.js';
+import { matchesLightNetwork, readLightdInfo } from './clients/light-server-observation.js';
 
 const clients = new WeakMap<LightClient, Readonly<{ network: Network; endpoint: string | null }>>();
 /** Unknown custom transports have no qualified durable route identity. */
 export const lightClientBinding = (client: LightClient) => clients.get(client);
 
-/** Complete light-client composition; no connection or native initialization at construction. */
+/** Endpoint shorthand initializes network codecs; connection/handshake remain lazy. */
+export function createLightClient(endpoint: string, options?: LightClientOptions): Promise<LightClient>;
+/** Explicit composition retains its synchronous, lazy construction. */
 export function createLightClient(
   args: { network: Network; transport: GrpcTransport | CustomLightTransport },
-): LightClient {
+): LightClient;
+export function createLightClient(
+  args: string | { network: Network; transport: GrpcTransport | CustomLightTransport },
+  options?: LightClientOptions,
+): LightClient | Promise<LightClient> {
+  if (typeof args === 'string') return lightFromEndpoint(args, options);
+  if (options !== undefined) throw invalidArgument();
   const input = snapshot(args, ['network', 'transport']);
   const { network } = input;
   const { definition, codec } = networkBinding(network);
@@ -55,13 +65,19 @@ export function createLightClient(
         definition.parameters.bytes,
         info.blockHeight,
       ).branchId;
-      if (info.chainName !== family || info.saplingActivationHeight !== definition.parameters.heights[1]
-        || info.branchId !== branch.toString(16).padStart(8, '0')) {
+      const mismatch = !matchesLightNetwork(info.chainName, family)
+        ? 'Light server chain name does not match the configured network encoding.'
+        : info.saplingActivationHeight !== definition.parameters.heights[1]
+          ? 'Light server Sapling activation height does not match the configured network.'
+          : info.branchId !== branch.toString(16).padStart(8, '0')
+            ? 'Light server consensus branch ID does not match the configured network at the reported block height.'
+            : undefined;
+      if (mismatch) {
         throw failure(
           'NETWORK_MISMATCH',
           'query',
           'configure',
-          'Light server network mismatch.',
+          mismatch,
         );
       }
       // lightwalletd requires a Sapling tree for GetTreeState, which genesis lacks.
@@ -243,4 +259,32 @@ export function createLightClient(
   } satisfies LightClient);
   clients.set(client, Object.freeze({ network, endpoint }));
   return client;
+}
+
+async function lightFromEndpoint(endpoint: string, options: LightClientOptions = {}): Promise<LightClient> {
+  const input = snapshot(options, ['network', 'transportOptions']);
+  const overrides = input.transportOptions === undefined
+    ? {}
+    : snapshot(input.transportOptions,
+        ['sourceId', 'timeoutMs', 'readRetry', 'maxResponseBytes', 'headers']);
+  // grpc owns/validates nested options before the first asynchronous boundary.
+  const transport = grpc(endpoint, {
+    sourceId: 'lightwallet',
+    timeoutMs: 30000,
+    readRetry: { attempts: 2, delayMs: 500 },
+    maxResponseBytes: 4 * 1024 * 1024,
+    ...overrides,
+  });
+  let network: Network;
+  if (input.network === undefined || typeof input.network === 'string') {
+    network = await defineNetwork(input.network);
+  } else {
+    try {
+      networkBinding(input.network);
+      network = input.network as Network;
+    } catch {
+      network = await defineNetwork(input.network as NetworkDefinition);
+    }
+  }
+  return createLightClient({ network, transport });
 }

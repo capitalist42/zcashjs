@@ -1,11 +1,12 @@
+import { waitForConfirmation } from './confirmation.js';
 import {
   createLightClient, createPublicClient, createWalletClient, defineNetwork, formatZec,
-  grpc, http, isZcashError, parseZec,
-} from "zcash.js";
+  grpc, httpTransport, isZcashError, parseZec,
+} from "@jp4g/zcash.js";
 import type {
   ErrorCode, LocalProvingOptions, MemorySigner, NetworkDefinition, PaymentState,
   Proposal, SecretInput, SignerBinding, WalletOptions,
-} from "zcash.js";
+} from "@jp4g/zcash.js";
 
 // Compile-only: the application supplies validated network/proof data and private inputs.
 declare const networkDefinition: NetworkDefinition;
@@ -49,7 +50,7 @@ const appWalletConfiguration: Pick<WalletOptions,
 const network = await defineNetwork(networkDefinition);
 const publicClient = createPublicClient({
   network, observation: appObservation,
-  transport: http('https://rpc.example.invalid', {
+  transport: httpTransport('https://rpc.example.invalid', {
     ...appTransportOptions, sourceId: 'walkthrough-rpc',
   }),
 });
@@ -81,7 +82,7 @@ try {
   if (!scanned.targetReached) throw new Error('Account sync has not reached its target');
   const issued = await wallet.addresses.next({
     accountId,
-    request: { format: 'unified', transparent: 'omit', sapling: 'require', ironwood: 'require' },
+    request: { format: 'unified', transparent: 'omit', sapling: 'omit', ironwood: 'require' },
   });
   // Display issued.address privately in the receive UI. Sync does not fund this account.
   // Sending requires a separate incoming payment; this specification supplies none.
@@ -101,7 +102,9 @@ try {
   // Review every step, recipient, amount, fee and expiry without modifying the proposal.
   if (await review(proposal)) {
     const pending = await wallet.send({ proposal }); // execute this exact immutable proposal
-    await pending.wait({ confirmations: 3, timeoutMs: 120_000 });
+    await waitForConfirmation(wallet, pending);
+  } else {
+    await wallet.operations.abandon({ operationId: proposal.operationId });
   }
   // #endregion send
 } catch (error: unknown) {

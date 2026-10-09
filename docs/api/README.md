@@ -2,7 +2,10 @@
 
 Build a Zcash application with TypeScript: read the chain, maintain a local wallet, receive funds, review a payment, and recover its state after a restart.
 
-The SDK is implemented and experimental. The package is currently private: install a local build, not an assumed npm release. Public and light queries use the included codecs. Wallet operations also need a compatible, authenticated WASM runtime package supplied by your application.
+The SDK is available from npm as an experimental release candidate. Start with
+[Installation](installation.md). Public and light queries use the included
+codecs. Wallet operations automatically load the included baseline WASM runtime;
+local proving assets are included and loaded when needed.
 
 ## Choose your starting point
 
@@ -22,12 +25,16 @@ The SDK is implemented and experimental. The package is currently private: insta
 - `createLightClient`: lightwallet queries and streams over native gRPC in Node or gRPC-Web in a browser.
 - `createWalletClient`: a local database, scanning, accounts, proposals, signing, and recorded payment operations.
 
-Clients are independent. Pass a light client to a wallet to enable sync; pass a broadcaster explicitly to enable submission. `createZcashClient({ public, light, wallet })` groups existing instances and checks their networks; it does not create or own them.
+`createWalletClient(endpoint, { network, storage })` configures its light client
+and submission route with wallet defaults. For explicit component composition,
+pass `light` for scanning and `broadcaster` for submission.
+`createZcashClient({ public, light, wallet })` groups existing instances and checks
+their networks; it does not create or own them.
 
 ## A first example
 
 ```ts
-import { formatZec, parseZec } from 'zcash.js';
+import { formatZec, parseZec } from '@jp4g/zcash.js';
 
 const amount = parseZec('0.00125');
 console.log(amount);           // 125000n zatoshis
@@ -36,4 +43,4 @@ console.log(formatZec(amount)); // "0.00125"
 
 Amounts are `bigint`. Keep user-entered ZEC as a string until `parseZec` validates it.
 
-The chapters below use ordinary TypeScript and the actual package exports. Examples with function parameters expect your application to supply those values. Typechecking verifies the API calls; it does not supply network endpoints, runtime artifacts, accounts, or funds.
+The chapters below use ordinary TypeScript and the actual package exports. Examples with function parameters expect your application to supply those values. Typechecking verifies the API calls; it does not supply network endpoints, accounts, or funds.

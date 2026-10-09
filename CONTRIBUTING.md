@@ -14,7 +14,7 @@ npm run docs:check-recovery
 npm run docs:build
 ```
 
-Run checks relevant to the change. [tests/README.md](https://github.com/jp4g/zcash.js/blob/main/tests/README.md) explains native fixtures, actual browser runners, and optional runtime/proving workloads. Keep experiments and logs in ignored scratch directories. Do not use real funds or live private wallet data as test fixtures.
+Run checks relevant to the change. [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) explains native fixtures, actual browser runners, and optional runtime/proving workloads. Keep experiments and logs in ignored scratch directories. Do not use real funds or live private wallet data as test fixtures.
 
 ## API and documentation
 
@@ -28,7 +28,7 @@ Prefer deletion and direct code over extra forwarding layers. Preserve input own
 
 ## Sensitive reports
 
-Keep mnemonics, passphrases, spending/viewing keys, wallet databases, PCZTs, credentials, and private account/transaction data out of issues, logs, and screenshots. Reproduce problems with synthetic data and sanitized error codes. Contact repository owner `jp4g` privately before sharing sensitive security details.
+Keep mnemonics, passphrases, spending/viewing keys, wallet databases, PCZTs, credentials, and private account/transaction data out of issues, logs, and screenshots. Reproduce problems with synthetic data and sanitized error codes. Contact the repository maintainers privately before sharing sensitive security details.
 
 ## Distribution
 
