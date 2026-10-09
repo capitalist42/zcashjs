@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fix wallet sync missing funds sent to ordinary transparent receiving and
+  change addresses by updating the bundled native wallet runtime (#14).
+
 - Accept Zakura/Zaino's `test` label for configured Regtest light clients while
   retaining genesis and consensus checks. Normalize aliased tree states for
   native birthday resolution and wallet sync without changing address encoding.
