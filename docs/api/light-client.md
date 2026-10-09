@@ -55,6 +55,18 @@ export function connectLight(network: Network, endpoint: string) {
 
 Creation is lazy; the first use performs the handshake. Server identity and network evidence must match your configured network.
 
+Handshake errors identify a chain-name/address-encoding disagreement, a Sapling
+activation-height disagreement, a consensus branch-ID disagreement at the reported
+block height, a genesis disagreement, or an unsupported protocol revision. Messages
+use fixed SDK text and do not include server values or endpoint credentials.
+
+For a custom deployment, RPC and lightwalletd must describe the same configured
+chain. If lightwalletd reports `test` while the deployment uses `regtest` address
+encoding, inspect the deployment's node/lightwalletd configuration and versions.
+Do not change the SDK encoding just to pass the handshake: it also controls address
+handling. `readGenesisHash` discovers genesis; it does not reconcile chain names or
+infer activation rules. See [custom network setup](networks-amounts.md).
+
 ## Stream a finite block range
 
 ```ts

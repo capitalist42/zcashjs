@@ -39,6 +39,26 @@ test('genesis discovery rejects malformed hashes and preserves RPC errors', asyn
   await assert.rejects(readGenesisHash(transport()), { code: 'METHOD_NOT_SUPPORTED' });
 });
 
+test('public handshake identifies genesis disagreement without exposing endpoint credentials', async t => {
+  t.mock.method(globalThis, 'fetch', async (_url, init) => {
+    const request = JSON.parse(init.body);
+    assert.equal(request.method, 'getblockheader', 'mismatch must block the tip query');
+    return reply(request, publicResponse(request).result);
+  });
+  const network = await defineNetwork({ ...publicNetworkDefinition(), genesisHash: '00'.repeat(32) });
+  const client = createPublicClient({ network,
+    transport: httpTransport('https://synthetic.invalid/SECRET-endpoint', {
+      ...transportOptions, headers: () => ({ authorization: 'SECRET-token' }),
+    }), observation: { pollIntervalMs: 1000, maxBufferedUpdates: 4 } });
+  await assert.rejects(client.getTip(), error => {
+    assert.equal(error.code, 'NETWORK_MISMATCH');
+    assert.equal(error.recovery, 'configure');
+    assert.match(error.message, /genesis hash/);
+    assert.doesNotMatch(error.message + JSON.stringify(error), /SECRET/);
+    return true;
+  });
+});
+
 test('genesis discovery uses transport retries, headers, bounds, timeout and cancellation', async t => {
   let calls = 0;
   t.mock.method(globalThis, 'fetch', async (_url, init) => {

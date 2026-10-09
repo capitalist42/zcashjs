@@ -65,13 +65,19 @@ export function createLightClient(
         definition.parameters.bytes,
         info.blockHeight,
       ).branchId;
-      if (info.chainName !== family || info.saplingActivationHeight !== definition.parameters.heights[1]
-        || info.branchId !== branch.toString(16).padStart(8, '0')) {
+      const mismatch = info.chainName !== family
+        ? 'Light server chain name does not match the configured network encoding.'
+        : info.saplingActivationHeight !== definition.parameters.heights[1]
+          ? 'Light server Sapling activation height does not match the configured network.'
+          : info.branchId !== branch.toString(16).padStart(8, '0')
+            ? 'Light server consensus branch ID does not match the configured network at the reported block height.'
+            : undefined;
+      if (mismatch) {
         throw failure(
           'NETWORK_MISMATCH',
           'query',
           'configure',
-          'Light server network mismatch.',
+          mismatch,
         );
       }
       // lightwalletd requires a Sapling tree for GetTreeState, which genesis lacks.

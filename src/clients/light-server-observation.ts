@@ -77,10 +77,16 @@ export async function readLightdInfo(source: Source, args: Op = {}): Promise<Lig
     check(signal);
     if (!dto || typeof dto !== 'object' || Array.isArray(dto)
       || typeof dto.version !== 'string' || typeof dto.vendor !== 'string'
-      || dto.lightwallet_protocol_version !== 'v0.5.0'
+      || typeof dto.lightwallet_protocol_version !== 'string'
       || typeof dto.chain_name !== 'string' || !dto.chain_name
       || typeof dto.consensus_branch_id !== 'string' || !/^[0-9a-f]{8}$/.test(dto.consensus_branch_id)
       || typeof dto.taddr_support !== 'boolean') throw protocol();
+    if (dto.lightwallet_protocol_version !== 'v0.5.0') {
+      throw failure(
+        'PROTOCOL_MISMATCH', 'transport', 'configure',
+        'Light server protocol revision is unsupported; expected v0.5.0.',
+      );
+    }
     const saplingActivationHeight = height(dto.sapling_activation_height),
       blockHeight = height(dto.block_height);
     check(signal);

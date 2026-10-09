@@ -116,7 +116,7 @@ export function createPublicClient(
           'NETWORK_MISMATCH',
           'query',
           'configure',
-          'Public server network mismatch.',
+          'Public server genesis hash does not match the configured network.',
         );
       }
       verified = true;
