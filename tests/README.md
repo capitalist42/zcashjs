@@ -1,17 +1,17 @@
 # Running tests
 
-For development use Node ^22.13.0 or >=24, as required by ESLint. From a fresh checkout:
+For development use Node ^22.13.0 or >=24, as required by ESLint, and the
+[source-build prerequisites](../docs/api/building-locally.md). From a fresh checkout:
 
 ```sh
 npm ci
 npm run check
 ```
 
-`check` runs ESLint, builds the current source into `dist/`, and runs every
-`tests/*/*.test.mjs` suite, with at most four test files running concurrently
-to bound native worker and bundler resource use. `npm test` does the same build and tests without
-linting; `npm run test:sdk` runs only the SDK subset. No external source tree,
-old build directory, Rust compiler, or live blockchain endpoint is needed.
+`check` runs lint, builds `dist/`, and runs `tests/*/*.test.mjs` with four files
+at a time. `npm test` omits lint; `npm run test:sdk` runs only SDK tests.
+The first build compiles Rust; later builds reuse verified native output.
+No live blockchain endpoint is needed.
 
 Native integration tests execute the pinned WASM in [fixtures/](fixtures/README.md).
 Missing or modified fixtures fail rather than silently skipping native coverage.
@@ -92,6 +92,13 @@ variables and trust the test certificate for that Node process with
 also requires `ARTIFACT_WEBDRIVER` and a Firefox profile that trusts the certificate;
 it does not disable certificate validation. See its entrypoint in
 `runtime/artifacts-browser.mjs` for the optional hostname/profile variables.
+
+The proving-cache test skips unless `PCZT_PROVING_PARAMETERS` names a directory
+containing the canonical Sapling parameters. After building, run it with:
+
+```sh
+PCZT_PROVING_PARAMETERS="$PWD/.cache/proving" node --test tests/wallet/proving.test.mjs
+```
 
 Documentation checks remain available as `npm run docs:typecheck`,
 `npm run docs:check-recovery`, and `npm run docs:build`.

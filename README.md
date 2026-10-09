@@ -31,14 +31,17 @@ reopening are verified; these do not establish older-database compatibility.
 
 ## Build and test
 
-Use Node 22.12 or newer and npm.
+Install the [build prerequisites](https://github.com/zcashlabs/zcashjs/blob/main/docs/api/building-locally.md), then:
 
 ```sh
 npm ci
-npm run check
+npm run build
 ```
 
-`check` runs source lint, the TypeScript/capsule build, and Node tests. See [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) for actual browser checks and optional runtime/proving prerequisites. Use `npm pack` to build, verify bundled assets, and prepare a local package; see [installation](https://github.com/zcashlabs/zcashjs/blob/main/docs/api/installation.md).
+The complete SDK is generated in `dist/`. The first build takes several minutes;
+later builds reuse cached native components and proving parameters.
+Run `npm run check` for lint, build and tests, or `npm pack` for a local tarball.
+See [tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md) for additional checks.
 
 ## Documentation
 

@@ -1,47 +1,77 @@
 # Build from source
 
-This page is for SDK development or testing an unpublished change. To use the
-SDK in an application, follow [Installation](installation.md) and install from npm.
+Applications can install the [prebuilt npm package](installation.md) without Rust
+or post-install downloads.
 
-## Build and check
+## Prerequisites
 
-Use Node **22.12 or newer** and npm.
+- macOS (Apple Silicon/Intel) or Linux x86_64. On Windows, use WSL2 x86_64 and
+  keep the checkout in its Linux filesystem.
+- Node 22.13+ within v22, or Node 24+, npm, Git, curl and [rustup](https://rustup.rs/).
+- C compiler and binutils: `xcode-select --install` on macOS; `build-essential`
+  and `ca-certificates` on Debian/Ubuntu/WSL.
+
+The native build installs its pinned Rust/WASM toolchain, WASI SDK and wasm-bindgen.
+
+## Build and test
 
 ```sh
 git clone https://github.com/zcashlabs/zcashjs.git
 cd zcashjs
 npm ci
 npm run build
-npm run check
 ```
 
-The normal package build uses the committed runtime/proving assets and verifies
-their integrity. It does not require rebuilding the native runtime with Rust.
+The first build downloads inputs, takes several minutes and needs several GB of
+disk space. Later builds verify and reuse native/proving caches. SDK output is
+regenerated in ignored `dist/`; tracked files stay unchanged.
 
-## Make a local package
+Run `npm run check` for lint, build and Node tests. See
+[tests/README.md](https://github.com/zcashlabs/zcashjs/blob/main/tests/README.md)
+for browser and optional integration tests.
 
-From the SDK checkout:
+## Source inputs
+
+This repo builds the TypeScript SDK, worker and npm package. The Rust crate
+`zakura-network-bindings` and native codecs live in
+[zakura-wasm-bindings](https://github.com/jp4g/zakura-wasm-bindings), built via
+`cargo xtask build`. [native-source.json](https://github.com/zcashlabs/zcashjs/blob/main/scripts/native-source.json)
+pins that repository's commit; its toolchain, lockfiles and tool hashes pin the build inputs.
+
+Sapling parameters come from `https://download.z.cash/downloads/`, checked against
+the sizes and hashes in [proving-assets.ts](https://github.com/zcashlabs/zcashjs/blob/main/src/wallet/proving-assets.ts).
+Generated production assets stay out of Git; pinned test fixtures remain tracked.
+
+## Cache recovery
+
+Run one build at a time per checkout. Remove the relevant cache and retry:
+
+| Problem | Remove |
+| --- | --- |
+| Rebuild native output | `.cache/native/<revision>/sdk/` |
+| Interrupted source fetch | `.cache/native/<revision>/` |
+| Checksum mismatch | The cached file named in the error |
+| Reset all SDK build caches | `.cache/native/`, `.cache/proving/`, `dist/` |
+
+Failed builds remove `dist/`. Rustup and Cargo also retain their own toolchain caches.
+
+## Local package
 
 ```sh
 mkdir -p /tmp/zcash-package
 npm pack --pack-destination /tmp/zcash-package
 ```
 
-`npm pack` builds and verifies the included assets before creating the tarball.
-It prints the filename, which includes the checkout's package version.
-
-From your application, install that file (this example uses rc.4):
+`npm pack` builds and includes the JavaScript, declarations, WASM, workers, proving
+assets and licenses. Install the resulting tarball from your application:
 
 ```sh
 npm install /tmp/zcash-package/jp4g-zcash.js-0.1.0-rc.4.tgz
 ```
 
-The tarball includes executable code, TypeScript declarations, lazy runtime and
-proving assets, integrity/build inventories, the README/changelog, and licenses.
-Source tests, private wallets, and internal planning documents are excluded.
-Installing it needs no separate runtime/proving download.
+Use the filename printed by `npm pack` for the current version.
 
-## Check and preview the documentation
+## Documentation
 
 ```sh
 npm run docs:typecheck
@@ -49,5 +79,4 @@ npm run docs:build
 npm run docs:dev
 ```
 
-The last command serves the guide at `http://127.0.0.1:4173/`.
-See [Maintain and publish](gitbook.md) for GitBook sync and site deployment.
+Preview at `http://127.0.0.1:4173/`. See [Maintain and publish](gitbook.md) for deployment.

@@ -1,3 +1,6 @@
+> Historical qualification record. For the current source build, use
+> [Build from source](../api/building-locally.md); the build commands below describe earlier runs.
+
 # Single-import release qualification
 
 Tracking: https://github.com/jp4g/zcash.js/issues/165 (children #166–#171).
