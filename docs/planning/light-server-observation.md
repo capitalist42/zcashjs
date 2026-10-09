@@ -51,7 +51,7 @@ platform intrinsics; this is not an arbitrary provider or hostile-platform API.
 
 ## Fixtures and qualification
 
-`light-server-observation-fixtures.mjs` contains independently encoded Python
+`light-server-observation-fixtures.js` contains independently encoded Python
 protobuf vectors derived from the pinned schema using the accepted
 `lightwire/tests/golden.py` descriptor oracle (installed protobuf 6.33.5).
 The full-field accepted golden vector is unchanged: the actual codec accepts it,

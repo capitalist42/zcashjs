@@ -62,14 +62,14 @@ transparent exposures rather than assuming one address-list row per call.
 With existing TypeScript available, compile using `tsc -p tsconfig.json`, then:
 
 ```sh
-node tests/wallet/session.test.mjs
-WALLET_TEST_ROOT=/assigned/scratch node tests/wallet/session-node.mjs /accepted/mnemonic-build-04/bundle
+node tests/wallet/session.test.js
+WALLET_TEST_ROOT=/assigned/scratch node tests/wallet/session-node.js /accepted/mnemonic-build-04/bundle
 ```
 
 ## Session review, 2026-09-12
 
-`tests/wallet/session-browser.mjs` adapts the existing VIEW browser lifecycle
-fixture and shares `views-worker.mjs`. It requires the original lifecycle
+`tests/wallet/session-browser.js` adapts the existing VIEW browser lifecycle
+fixture and shares `views-worker.js`. It requires the original lifecycle
 observer and a `bundle` page query parameter resolving to the accepted closure
 directory (with trailing slash). The host must serve the owned test files and
 compiled SDK at their repository-relative paths, including

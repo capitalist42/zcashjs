@@ -347,7 +347,7 @@ The native Rust source is unchanged from the previously packaged native revision
 exports and packaging. This is source evidence, not fresh native qualification.
 
 The old producer depends on unavailable absolute scratch paths, an inherited
-build receipt and private tool locations. `scripts/build-native-wallet.mjs` is
+build receipt and private tool locations. `scripts/build-native-wallet.js` is
 the replacement candidate: explicit paths, pinned source/bindgen, locked Cargo
 inputs and a newly generated receipt. It is not yet a completed release pipeline.
 
@@ -378,7 +378,7 @@ This comparison used the same source checkout and Cargo registry paths; arbitrar
 path-independent byte reproduction has not yet been established.
 
 ```sh
-node scripts/build-native-wallet.mjs SOURCE WASI_SDK WASM_BINDGEN NEW_OUTPUT
+node scripts/build-native-wallet.js SOURCE WASI_SDK WASM_BINDGEN NEW_OUTPUT
 ```
 
 Clean-cache preparation (use an absolute, new `CARGO_HOME`, and run `cargo info`
@@ -401,13 +401,13 @@ SDK/bindgen archives above. From this SDK checkout, run the producer, followed b
 ```sh
 npm ci
 npm run build
-node scripts/build-wallet-worker.mjs NEW_WORKER.mjs
-node scripts/package-native-wallet.mjs NATIVE_BUILD SOURCE NEW_WORKER.mjs NEW_RUNTIME
+node scripts/build-wallet-worker.js NEW_WORKER.mjs
+node scripts/package-native-wallet.js NATIVE_BUILD SOURCE NEW_WORKER.mjs NEW_RUNTIME
 ```
 
 To replace package assets deliberately, preserve the current `src/runtime/assets`
 directory in an owned backup first, then run
-`node scripts/bundled-assets.mjs --generate NEW_RUNTIME PROVING_DIRECTORY`.
+`node scripts/bundled-assets.js --generate NEW_RUNTIME PROVING_DIRECTORY`.
 The generator refuses to overwrite the existing inventory. Run `npm run build`
 again to verify/copy the new pins and assets. Ordinary consumer builds do not
 compile Rust or download tools, runtime files or proving parameters.
@@ -439,7 +439,7 @@ the distributions' MIT/Apache notices are retained in `licenses/SAPLING-PARAMETE
   rollback, exact-byte retries without authority/proof reload, and persistence
   after reopening (1 test, 57 seconds).
 - Fresh baseline WASM compilation succeeded using recovered upstream tools.
-  Memory/import inspection passed. `scripts/package-native-wallet.mjs` assembled
+  Memory/import inspection passed. `scripts/package-native-wallet.js` assembled
   that binary with the current SDK worker; six startup/persistence cases passed
   (including account/address/balance and close/reopen).
 - Local candidate: `.local/single-import/runtime-01`, manifest SHA-256
@@ -462,7 +462,7 @@ the distributions' MIT/Apache notices are retained in `licenses/SAPLING-PARAMETE
 - Isolated packed Node consumer imports/types and actual default wallet opening
   passed; missing and corrupted installed WASM are rejected before wallet
   startup. Webpack and Vite browser import checks passed.
-- `scripts/verify-bundled-browser.mjs` installs the tarball into a new project
+- `scripts/verify-bundled-browser.js` installs the tarball into a new project
   outside this repository, produces a Vite application with `/nested/` base, and
   runs public wallet import/address/balance/OPFS reopen in real Firefox 156.
   It passed without runtime overrides. No wallet/proving files were fetched on

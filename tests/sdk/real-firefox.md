@@ -17,7 +17,7 @@ Logs and scratch files default to `.local/tests/sdk-firefox/` within the repo;
 `--logs` and `--scratch` can override them. No browser is downloaded by the
 runner, and no browser security settings are weakened.
 
-The shared `tests/support/firefox-options.mjs` helper sets headless mode. The
+The shared `tests/support/firefox-options.js` helper sets headless mode. The
 runner owns its temporary listeners, profiles, and child processes and cleans
 them up on success, failure, or interruption.
 
@@ -67,7 +67,7 @@ the source HEAD alone is not a claim that the working tree was clean.
 No-socket checks:
 
 ```sh
-node tests/sdk/real-firefox.test.mjs
+node tests/sdk/real-firefox.test.js
 npm run test:sdk:real-firefox -- --prepare-only
 ```
 The public LightClient matrix runs all eleven methods through the packed ESM

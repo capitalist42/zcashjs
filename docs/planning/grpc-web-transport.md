@@ -140,9 +140,9 @@ encoding or network behavior. For this worktree:
 
 ```sh
 npm run build
-node --test tests/clients/grpc-web.test.mjs
+node --test tests/clients/grpc-web.test.js
 npm run test:sdk
-node tests/clients/grpc-web-browser.mjs
+node tests/clients/grpc-web-browser.js
 ```
 
 The standalone Firefox runner uses installed `/snap/bin/geckodriver`, ephemeral

@@ -21,7 +21,7 @@ mismatch or unreadable state file requires inspection of the preserved files.
 
 Acceptance is Ironwood-only: both receive addresses contain only Ironwood,
 spending selects only Ironwood inputs, and change returns to Ironwood. For existing
-test wallets, `node wallet.mjs addresses` generates and verifies new Ironwood-only
+test wallets, `node wallet.js addresses` generates and verifies new Ironwood-only
 addresses without replacing accounts or recovery material; previous addresses
 remain recorded. Do not fund the earlier Sapling-only acceptance address.
 
@@ -30,10 +30,10 @@ are confirmed and spendable. Each transfer command is explicit consent to submit
 the displayed payment; use these commands only with fresh testnet wallets:
 
 ```sh
-node wallet.mjs send A B 0.001 acceptance-a-to-b
-node wallet.mjs receive B CONFIRMED_TXID 0.001
-node wallet.mjs send B A 0.0005 acceptance-b-to-a
-node wallet.mjs receive A CONFIRMED_RETURN_TXID 0.0005
+node wallet.js send A B 0.001 acceptance-a-to-b
+node wallet.js receive B CONFIRMED_TXID 0.001
+node wallet.js send B A 0.0005 acceptance-b-to-a
+node wallet.js receive A CONFIRMED_RETURN_TXID 0.0005
 ```
 
 The receiving checks verify transaction identity, exact account balance delta,
@@ -51,7 +51,7 @@ qualification, as do all advertised pools and the browser live flow.
 Confirmation consumes `wallet.watchSync()` concurrently with `pending.wait()`:
 payment waiting alone does not scan the wallet. Both tasks are cancelled and
 drained when either confirmation completes or one task fails. A scan error stops
-the wait without rebuilding or resubmitting a payment. `node wallet.mjs confirm A OPERATION_ID`
+the wait without rebuilding or resubmitting a payment. `node wallet.js confirm A OPERATION_ID`
 resumes observation/scanning of an existing operation without submitting anything.
 
 The default endpoint is `https://testnet.zec.rocks:443`, previously used in issue

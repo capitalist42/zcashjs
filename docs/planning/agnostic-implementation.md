@@ -62,7 +62,7 @@ an unknown outcome if cancellation interrupts a dispatched submission. Custom
 adapters receive the same owned byte and cancellation boundaries.
 
 The root also exports `GrpcTransport`, `CustomLightTransport`, `LightClient`,
-`LightUnaryMethod` and `LightStreamMethod` types. `tests/sdk/light-client-node.test.mjs`
+`LightUnaryMethod` and `LightStreamMethod` types. `tests/sdk/light-client-node.test.js`
 exercises the packed public API over actual local native gRPC, including all eleven
 methods and three cancelled-call cleanups. These synthetic fixtures do not qualify
 any live provider. The public wallet factory remains unfinished.
@@ -105,13 +105,13 @@ were installed using `npm ci --offline --ignore-scripts --no-audit --no-fund`.
 
 | Root value export | Contract and implementation | Executed behavioral coverage |
 | --- | --- | --- |
-| `parseZec(value: string): bigint` | Exact decimal-to-zatoshi arithmetic; at most eight fractional digits, no float conversion. Signed input supports balance deltas. | `tests/sdk/primitives.test.mjs`: known examples, huge amounts, 2,001 signed round trips, precision/coercion/notation rejection. |
+| `parseZec(value: string): bigint` | Exact decimal-to-zatoshi arithmetic; at most eight fractional digits, no float conversion. Signed input supports balance deltas. | `tests/sdk/primitives.test.js`: known examples, huge amounts, 2,001 signed round trips, precision/coercion/notation rejection. |
 | `formatZec(zatoshis: bigint): string` | Exact signed display, no exponent, unnecessary fractional zeros removed. | Same amount tests, including one zatoshi and values beyond the safe-number range. |
 | `accountIndex`, `diversifierIndex` | Frozen integer bounds, no coercion/wrapping. | Both inclusive boundaries and out-of-range/type cases. |
 | `txId`, `blockHash` | Lowercase, exactly 64 display hex characters; no byte reversal or normalization. | Wrong width, uppercase, prefix, newline and invalid characters reject. |
 | `isZcashError(value: unknown): value is ZcashError` | Recognizes this module instance's errors using a private WeakSet; no foreign getters inspected. | Sanitized messages/stacks, foreign errors/lookalikes/proxies rejected. |
-| `defineNetwork(args): Promise<Network>` | Real Rust-validated immutable descriptor, admitted by a private instance registry; bounded copied canonical parameters and cancellation. | `tests/sdk/network.test.mjs`: actual packed Node import, lazy single native initialization, no fetch, Sapling branch vector, input ownership, forged-instance rejection and cancellation. |
-| `http(url, options): HttpTransport` | Lazy opaque transport with a real internal Fetch JSON-RPC 2.0 read engine. It has no public request method and currently no exported client that consumes it. | `tests/sdk/http.test.mjs`: serialization, IDs, policy validation/copying, exact response numbers, error/absence distinction, bounds, retries and cancellation. |
+| `defineNetwork(args): Promise<Network>` | Real Rust-validated immutable descriptor, admitted by a private instance registry; bounded copied canonical parameters and cancellation. | `tests/sdk/network.test.js`: actual packed Node import, lazy single native initialization, no fetch, Sapling branch vector, input ownership, forged-instance rejection and cancellation. |
+| `http(url, options): HttpTransport` | Lazy opaque transport with a real internal Fetch JSON-RPC 2.0 read engine. It has no public request method and currently no exported client that consumes it. | `tests/sdk/http.test.js`: serialization, IDs, policy validation/copying, exact response numbers, error/absence distinction, bounds, retries and cancellation. |
 
 Only the associated `AccountIndex`, `DiversifierIndex`, `TxId`, `BlockHash`,
 `ErrorCode`, `ErrorInfo`, `ZcashError`, `HttpTransport`, `TransportOptions`,
@@ -184,8 +184,8 @@ Dependency pins and lock graph remain unchanged except root package metadata.
 | --- | --- |
 | `npm ci --offline --ignore-scripts --no-audit --no-fund` | Pass, 106 existing pinned development packages installed. |
 | `npm run build` | Pass, ESM JavaScript and declarations emitted. |
-| `node --test --test-isolation=none tests/sdk/*.test.mjs` | 23 pass, 0 fail, 1 local-socket skip (24 tests). |
-| `node tests/sdk/consumer.test.mjs` | 2 pass: real packed-package installation/import/typecheck and browser bundle execution. |
+| `node --test --test-isolation=none tests/sdk/*.test.js` | 23 pass, 0 fail, 1 local-socket skip (24 tests). |
+| `node tests/sdk/consumer.test.js` | 2 pass: real packed-package installation/import/typecheck and browser bundle execution. |
 | `npm run docs:typecheck` | Pass. |
 | `npm run docs:check-recovery` | Pass, compile-only recovery checks; its historical “documentation-only” output does not describe this slice. |
 | `npm run docs:build` | Pass; existing large-chunk advisory remains. |
@@ -209,14 +209,14 @@ with browser globals, no Node globals, and WASM access/code generation disabled.
 This establishes browser-safe importing and execution of this subset, not actual
 browser networking/CORS, OPFS, wallet or chain qualification.
 
-The isolated local HTTP server harness is retained in `tests/sdk/http.test.mjs`.
+The isolated local HTTP server harness is retained in `tests/sdk/http.test.js`.
 `listen(0, '127.0.0.1')` failed with `EPERM` in this sandbox. Synthetic Fetch and
 ReadableStream fault injection passed; real socket behavior is unverified here.
 Coordinator rerun on a socket-permitted host:
 
 ```sh
 npm run build
-node --test --test-name-pattern="isolated HTTP" tests/sdk/http.test.mjs
+node --test --test-name-pattern="isolated HTTP" tests/sdk/http.test.js
 ```
 
 ## Remaining scope and next slice
@@ -266,7 +266,7 @@ finishes within its call. No mutable runtime URL or fetch supplies executable by
 
 `src/runtime/primitive-capsule.json` records the accepted native receipt, every
 primitive artifact hash, the closed executable module set, generator and lockfile
-hashes and emitted capsule hash. `scripts/primitive-capsule.mjs --generate
+hashes and emitted capsule hash. `scripts/primitive-capsule.js --generate
 VERIFIED_NATIVE_BUILD` reproduces this selected asset from verified bytes using
 the existing locked bundler. Ordinary package builds only hash-check and copy the
 committed capsule and declarations; they need no local native artifact/build tools.
@@ -278,7 +278,7 @@ transparent-address Rust artifacts using the same offline capsule producer.
 `lightwire-capsule.mjs` and `transparent-address-capsule.mjs` each expose an internal
 `initialize()` returning the existing codec interface; import does not instantiate
 WASM, and repeated initialization reuses the stateless instance. Reproduce with
-`node scripts/primitive-capsule.mjs --generate-lightwire BUILD` or
+`node scripts/primitive-capsule.js --generate-lightwire BUILD` or
 `--generate-transparent-address BUILD`. Normal builds verify the committed hashes
 and copy the capsules without fetching or building native code. This adds no
 public client factory; packed Node codec tests are not browser acceptance.

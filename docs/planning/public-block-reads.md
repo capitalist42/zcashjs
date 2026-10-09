@@ -66,8 +66,8 @@ worker, WASM or new public transport option is introduced.
 
 ## Qualification and handoff
 
-Tests are in `tests/clients/public-block-reads.test.mjs` and
-`tests/clients/public-block-reads-browser.mjs`. They reuse A's fixture transport
+Tests are in `tests/clients/public-block-reads.test.js` and
+`tests/clients/public-block-reads-browser.js`. They reuse A's fixture transport
 and immutable header vectors. The maximum-list test uses synthetic canonical
 hash strings solely to test allocation/order, not as a cryptographic oracle.
 Digest cancellation tests delegate to real native SHA-256.
@@ -87,9 +87,9 @@ Build command (all emitted files outside the worktree):
 
 ```sh
 node node_modules/typescript/bin/tsc -p tsconfig.json --outDir /home/jack/zcash-public-block-scratch/dist
-node --test --test-isolation=none --test-reporter=tap tests/clients/public-block-reads.test.mjs
-PUBLIC_CHAIN_READS_BUILD=/home/jack/zcash-public-block-scratch/dist node --test --test-isolation=none --test-reporter=tap tests/clients/public-chain-reads.test.mjs
-node tests/clients/public-block-reads-browser.mjs
+node --test --test-isolation=none --test-reporter=tap tests/clients/public-block-reads.test.js
+PUBLIC_CHAIN_READS_BUILD=/home/jack/zcash-public-block-scratch/dist node --test --test-isolation=none --test-reporter=tap tests/clients/public-chain-reads.test.js
+node tests/clients/public-block-reads-browser.js
 ```
 
 In the worker sandbox, TypeScript and three socket-free tests pass. All local

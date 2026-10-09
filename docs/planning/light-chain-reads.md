@@ -98,7 +98,7 @@ reimplemented in TypeScript.
 Node tests exercise real WASM + this adapter + the accepted gRPC-Web transport
 with synthetic Fetch responses, plus custom iterator lifecycle controls. Separate
 Node HTTP and ordinary page-owned Firefox runners share localhost checks. Firefox
-uses the existing `grpc-web-browser.mjs` process/profile/session cleanup pattern;
+uses the existing `grpc-web-browser.js` process/profile/session cleanup pattern;
 no automation-realm module imports or general evidence framework was introduced.
 Receipts bind source, build, assets, requests and cleanup. Run the following on
 the reviewed parent host, with a fresh external output directory:
@@ -110,9 +110,9 @@ CHAIN_RUN=$(mktemp -d /home/jack/zcash-light-chain-scratch/parent.XXXXXX)
 CHAIN_LOG=$(mktemp -d /home/jack/zcash-light-chain-logs/parent.XXXXXX)
 node /home/jack/zcash.js/node_modules/typescript/bin/tsc -p tsconfig.json --outDir "$CHAIN_RUN/build" > "$CHAIN_LOG/tsc.log" 2>&1
 printf '{"type":"module"}\n' > "$CHAIN_RUN/build/package.json"
-LIGHT_CHAIN_BUILD="$CHAIN_RUN/build" node tests/clients/light-chain-reads.test.mjs > "$CHAIN_LOG/unit.log" 2>&1
-LIGHT_CHAIN_BUILD="$CHAIN_RUN/build" LIGHT_CHAIN_LOGS="$CHAIN_LOG" node tests/clients/light-chain-reads-network.mjs > "$CHAIN_LOG/node-network.log" 2>&1
-LIGHT_CHAIN_BUILD="$CHAIN_RUN/build" LIGHT_CHAIN_LOGS="$CHAIN_LOG" LIGHT_CHAIN_SCRATCH="$CHAIN_RUN" node tests/clients/light-chain-reads-browser.mjs > "$CHAIN_LOG/firefox.log" 2>&1
+LIGHT_CHAIN_BUILD="$CHAIN_RUN/build" node tests/clients/light-chain-reads.test.js > "$CHAIN_LOG/unit.log" 2>&1
+LIGHT_CHAIN_BUILD="$CHAIN_RUN/build" LIGHT_CHAIN_LOGS="$CHAIN_LOG" node tests/clients/light-chain-reads-network.js > "$CHAIN_LOG/node-network.log" 2>&1
+LIGHT_CHAIN_BUILD="$CHAIN_RUN/build" LIGHT_CHAIN_LOGS="$CHAIN_LOG" LIGHT_CHAIN_SCRATCH="$CHAIN_RUN" node tests/clients/light-chain-reads-browser.js > "$CHAIN_LOG/firefox.log" 2>&1
 ```
 
 Run each command only after the preceding command succeeds. No dependencies are
