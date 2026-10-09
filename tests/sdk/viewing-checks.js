@@ -26,8 +26,9 @@ export async function viewingChecks(api) {
     await reject(api.addresses.find({account:full,start:api.diversifierIndex(invalid),maxAttempts:1}),'ADDRESS_SEARCH_LIMIT');
     check((await api.addresses.find({account:full,start:api.diversifierIndex(invalid),maxAttempts:100})).index>invalid,'bounded search advances');
     const decoded=await api.addresses.decode({network,address:exact.address});
-    const context={network,targetHeight:20,branchId:0x76b809bb};
+    const context=api.getConsensusContext({network,targetHeight:20});
     const selected=await api.addresses.selectReceiver({address:{...decoded},pool:'sapling',context});
+    await reject(api.addresses.selectReceiver({address:decoded,pool:'sapling',context:{...context,branchId:0}}),'NETWORK_MISMATCH');
     check(selected.type==='sapling'&&selected.bytes.length===43,'native receiver routing');
     // Pinned zcash_protocol BranchId::Nu6_3; synthetic activation height 100.
     for(const [pool,type,length] of [['transparent','p2pkh',20],['ironwood','orchard',43]]) {

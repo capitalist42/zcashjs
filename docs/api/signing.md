@@ -52,4 +52,7 @@ export async function inspectPczt(bytes: Uint8Array, context: ConsensusContext) 
 }
 ```
 
-Obtain the context from the corresponding proposal or another validated application flow. Do not guess a branch ID from the current height and use it for unrelated bytes.
+Reuse the corresponding proposal's context. Without a proposal, use
+`getConsensusContext({ network, targetHeight })` only when the application knows
+the PCZT's intended network and height. The helper derives consensus rules; it
+does not establish the bytes' context. Do not substitute the current chain tip.

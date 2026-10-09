@@ -49,14 +49,16 @@ Standalone derivation does not record address exposure in a wallet. Prefer walle
 
 ## Inspect and select a receiver
 
-Use a real consensus context, such as the context of a reviewed proposal.
+Use a reviewed proposal's context when available. For standalone selection,
+derive one from the registered network and intended transaction height:
 
 ```ts
-import { addresses } from '@jp4g/zcash.js';
-import type { ConsensusContext, Pool } from '@jp4g/zcash.js';
+import { addresses, getConsensusContext } from '@jp4g/zcash.js';
+import type { Network, Pool } from '@jp4g/zcash.js';
 
-export async function receiver(context: ConsensusContext, encoded: string, pool: Pool) {
-  const address = await addresses.decode({ network: context.network, address: encoded });
+export async function receiver(network: Network, targetHeight: number, encoded: string, pool: Pool) {
+  const context = getConsensusContext({ network, targetHeight });
+  const address = await addresses.decode({ network, address: encoded });
   return addresses.selectReceiver({ address, pool, context });
 }
 ```
