@@ -131,6 +131,7 @@ catch (error) { window.grpcWebResult = { ok: false, error: String(error), name: 
       ['/src/clients/grpc-web.js', readFileSync(build + '/src/clients/grpc-web.js')],
       ['/src/clients/grpc-status.js', readFileSync(build + '/src/clients/grpc-status.js')],
       ['/src/clients/light-chain-reads.js', readFileSync(build + '/src/clients/light-chain-reads.js')],
+      ['/src/clients/light-server-observation.js', readFileSync(build + '/src/clients/light-server-observation.js')],
       ['/src/clients/owned-plumbing.js', readFileSync(build + '/src/clients/owned-plumbing.js')],
       ['/src/primitives.js', readFileSync(build + '/src/primitives.js')],
       ['/light-chain-reads-fixtures.js', readFileSync(new URL('./light-chain-reads-fixtures.js', import.meta.url))],
@@ -142,7 +143,7 @@ catch (error) { window.grpcWebResult = { ok: false, error: String(error), name: 
     report.assets = Object.fromEntries([...assets].map(([path, bytes]) => [path, hash(bytes)]));
     report.sources = {};
     for (const path of ['src/clients/light-chain-reads.ts', 'src/clients/grpc-web.ts', 'src/errors.ts', 'src/primitives.ts', 'tsconfig.json', 'package.json',
-      'src/clients/owned-plumbing.ts',
+      'src/clients/owned-plumbing.ts', 'src/clients/light-server-observation.ts',
       'tests/clients/light-chain-reads-browser.js', 'tests/clients/light-chain-reads-checks.js', 'tests/clients/light-chain-reads-fixtures.js',
       'tests/support/firefox-options.js']) {
       report.sources[path] = hash(readFileSync(new URL('../../' + path, import.meta.url)));

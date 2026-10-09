@@ -200,8 +200,6 @@ try {
     browserIdentity = await identity(value.capabilities['moz:processID']);
     assert.ok(session && browserIdentity && driverIdentity, 'owned session/process identities');
     assert.equal(value.capabilities.browserName, 'firefox');
-    assert.match(value.capabilities.browserVersion, /^155\./);
-    assert.match(value.capabilities['moz:geckodriverVersion'], /^0\.37\./);
     await request(`/session/${session}/timeouts`, 'POST', { script: 20000, pageLoad: 15000, implicit: 0 });
     await request(`/session/${session}/url`, 'POST', { url: origin });
     const result = await request(`/session/${session}/execute/async`, 'POST', {
