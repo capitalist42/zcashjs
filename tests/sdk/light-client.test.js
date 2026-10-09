@@ -62,6 +62,25 @@ test('complete light factory composes all eleven methods with actual native code
   assert.equal(state.returns, 5);
 });
 
+test('broadcast acknowledges only the matching txid in plain or JSON-quoted responses', async () => {
+  const { client, state, raw, vector } = await fixture();
+  for (const [message, outcome] of [
+    [vector.display, 'acknowledged'],
+    [JSON.stringify(vector.display), 'acknowledged'],
+    ['00'.repeat(32), 'unknown'],
+    [JSON.stringify('00'.repeat(32)), 'unknown'],
+    ['', 'unknown'],
+    ['success', 'unknown'],
+    [JSON.stringify({ txid: vector.display }), 'unknown'],
+  ]) {
+    state.send = async () => text(2, message);
+    assert.equal((await client.broadcastTransaction({ bytes: raw })).outcome, outcome, message);
+  }
+  state.send = async () => concat(scalar(1, 1), text(2, vector.display));
+  assert.equal((await client.broadcastTransaction({ bytes: raw })).outcome, 'rejected');
+  assert.equal(state.calls.filter(v => v === 'SendTransaction').length, 8);
+});
+
 test('public broadcast preserves unknown outcome after dispatched cancellation', async () => {
   const { client, state, raw } = await fixture();
   let dispatch; const dispatched = new Promise(resolve => { dispatch = resolve; });
