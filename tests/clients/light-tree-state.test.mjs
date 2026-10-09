@@ -35,7 +35,7 @@ test('invalid selectors reject before transport; mismatched endpoint evidence ne
   assert.equal(calls, 0);
   for (const [value, selector, code] of [
     [{ height: 8 }, { height: 7 }, 'PROTOCOL_MISMATCH'],
-    [{ network: 'test' }, { height: 7 }, 'NETWORK_MISMATCH'],
+    [{ network: 'main' }, { height: 7 }, 'NETWORK_MISMATCH'],
     [{ height: 2n ** 32n }, { height: 7 }, 'PROTOCOL_MISMATCH'],
     [{ h: 'ab'.repeat(32) }, { hash: display(hash) }, 'PROTOCOL_MISMATCH'],
     [{ height: 0, h: 'ab'.repeat(32) }, { height: 0 }, 'NETWORK_MISMATCH'],

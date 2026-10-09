@@ -149,7 +149,7 @@ export interface TreeState extends SourceObservation {
   readonly point: ChainPoint;
   readonly sapling: Uint8Array | null;
   readonly ironwood: Uint8Array | null;
-  readonly encoded: Uint8Array; // pinned lightwallet TreeState protobuf
+  readonly encoded: Uint8Array; // pinned lightwallet TreeState protobuf; network label normalized to configured encoding
 }
 export interface SubtreeRoot extends SourceObservation {
   readonly pool: ShieldedPool;

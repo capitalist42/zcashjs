@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Accept Zakura/Zaino's `test` label for configured Regtest light clients while
+  retaining genesis and consensus checks. Normalize aliased tree states for
+  native birthday resolution and wallet sync without changing address encoding.
+  Network mismatch messages now identify the failed check without server values.
+
 - Add `readGenesisHash(transport, { signal? })` for custom-network bootstrap
   using the existing HTTP transport, without application-written JSON-RPC.
 

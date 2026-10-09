@@ -60,12 +60,20 @@ activation-height disagreement, a consensus branch-ID disagreement at the report
 block height, a genesis disagreement, or an unsupported protocol revision. Messages
 use fixed SDK text and do not include server values or endpoint credentials.
 
-For a custom deployment, RPC and lightwalletd must describe the same configured
-chain. If lightwalletd reports `test` while the deployment uses `regtest` address
-encoding, inspect the deployment's node/lightwalletd configuration and versions.
-Do not change the SDK encoding just to pass the handshake: it also controls address
-handling. `readGenesisHash` discovers genesis; it does not reconcile chain names or
-infer activation rules. See [custom network setup](networks-amounts.md).
+For Regtest, keep `encoding: 'regtest'`. The SDK accepts exactly `regtest` or `test`
+as the server's chain label: Zakura/Zaino use the BIP70 `test` label for Regtest.
+Mainnet still requires `main`; Testnet still requires `test`. The label alone does
+not identify the chain: the handshake still checks genesis, Sapling activation
+height and the consensus branch ID at the server's reported height.
+
+The same alias is accepted in tree-state responses. `TreeState.encoded` normalizes
+that label to `regtest` through the pinned codec for native birthday and wallet
+scan validation; decoded tree contents, height and hash are retained. Address
+encoding and the configured network are unchanged.
+
+For any remaining mismatch, inspect the node/lightwalletd configuration and
+versions. `readGenesisHash` discovers genesis; it does not infer activation rules.
+See [custom network setup](networks-amounts.md).
 
 ## Stream a finite block range
 

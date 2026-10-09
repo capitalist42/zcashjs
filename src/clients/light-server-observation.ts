@@ -1,6 +1,6 @@
 import { bridgeSignal, signalAborted } from '../abort.js';
 import { copyRecord } from './owned-plumbing.js';
-import type { Op } from '../types.js';
+import type { NetworkParameters, Op } from '../types.js';
 import type { createGrpcWebByteTransport } from './grpc-web.js';
 import { failure, invalidArgument, isZcashError } from '../errors.js';
 
@@ -27,6 +27,11 @@ export type LightdObservation = {
   readonly taddrSupport: boolean;
 };
 const apply = Reflect.apply;
+
+/** Regtest servers may use the BIP70 test label; this never establishes chain identity. */
+export function matchesLightNetwork(name: string, encoding: NetworkParameters['encoding']): boolean {
+  return name === encoding || encoding === 'regtest' && name === 'test';
+}
 
 // Only data methods of the trusted actual instances are captured; this does not
 // admit arbitrary transports/codecs as an alternative initialization boundary.

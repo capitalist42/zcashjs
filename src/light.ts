@@ -10,7 +10,7 @@ import { ownCustomLightTransport } from './clients/custom-light.js';
 import * as chain from './clients/light-chain-reads.js';
 import * as transactions from './clients/light-transaction-reads.js';
 import * as transparent from './clients/light-transparent-reads.js';
-import { readLightdInfo } from './clients/light-server-observation.js';
+import { matchesLightNetwork, readLightdInfo } from './clients/light-server-observation.js';
 
 const clients = new WeakMap<LightClient, Readonly<{ network: Network; endpoint: string | null }>>();
 /** Unknown custom transports have no qualified durable route identity. */
@@ -65,7 +65,7 @@ export function createLightClient(
         definition.parameters.bytes,
         info.blockHeight,
       ).branchId;
-      const mismatch = info.chainName !== family
+      const mismatch = !matchesLightNetwork(info.chainName, family)
         ? 'Light server chain name does not match the configured network encoding.'
         : info.saplingActivationHeight !== definition.parameters.heights[1]
           ? 'Light server Sapling activation height does not match the configured network.'
