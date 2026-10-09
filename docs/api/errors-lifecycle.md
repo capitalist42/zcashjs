@@ -44,6 +44,9 @@ network presets, and canonical custom-network parameter requirements. Messages
 contain fixed SDK guidance, not supplied URLs, credentials, or secret values.
 Branch on `code`; message wording is diagnostic text, not a stable API.
 
+Viewing/address messages explain authority, receiver, consensus and search-limit
+failures. Some causes share a code: check the alternatives named in the message.
+
 ## Cancel a read
 
 ```ts

@@ -18,34 +18,52 @@ import { diversifierIndex } from './primitives.js';
 import { failure, invalidArgument, isZcashError } from './errors.js';
 
 const handles = new WeakMap<ViewKeyHandle, { native: ViewingAuthority; network: Network; closed: boolean }>();
-const codes: Record<string, ErrorCode> = {
-  CLOSED: 'CLOSED',
-  INVALID_ARGUMENT: 'INVALID_ARGUMENT',
-  INVALID_ADDRESS: 'INVALID_ARGUMENT',
-  MISSING_AUTHORITY: 'RECEIVER_UNAVAILABLE',
-  NETWORK_MISMATCH: 'NETWORK_MISMATCH',
-  FULL_VIEWING_KEY_REQUIRED: 'FULL_VIEWING_KEY_REQUIRED',
-  UNSUPPORTED_POOL: 'UNSUPPORTED_POOL',
-  INVALID_DIVERSIFIER: 'INVALID_DIVERSIFIER',
-  DIVERSIFIER_EXHAUSTED: 'DIVERSIFIER_EXHAUSTED',
-  ADDRESS_SEARCH_LIMIT: 'ADDRESS_SEARCH_LIMIT',
-  DISCOVERY_RANGE_UNSAFE: 'DISCOVERY_RANGE_UNSAFE',
-  RECEIVER_UNAVAILABLE: 'RECEIVER_UNAVAILABLE',
-  RESOURCE_LIMIT: 'RESOURCE_LIMIT',
+const diagnostics: Record<string, readonly [ErrorCode, string]> = {
+  CLOSED: ['CLOSED', 'Viewing authority is disposed.'],
+  INVALID_ARGUMENT: ['INVALID_ARGUMENT', 'Invalid viewing input; check the key, format, index and request options.'],
+  INVALID_ADDRESS: ['INVALID_ARGUMENT', 'Address is malformed, unsupported or encoded for a different network.'],
+  MISSING_AUTHORITY: ['RECEIVER_UNAVAILABLE', 'The viewing key or address lacks a required receiver component.'],
+  NETWORK_MISMATCH: [
+    'NETWORK_MISMATCH', 'Check the viewing key network and the consensus context network, height and branch.',
+  ],
+  FULL_VIEWING_KEY_REQUIRED: [
+    'FULL_VIEWING_KEY_REQUIRED', 'Exporting a full viewing key requires full viewing authority.',
+  ],
+  UNSUPPORTED_POOL: [
+    'UNSUPPORTED_POOL', 'Requested pool is disabled or unavailable under the configured consensus rules.',
+  ],
+  INVALID_DIVERSIFIER: [
+    'INVALID_DIVERSIFIER', 'No Sapling address exists at this diversifier index; use addresses.find to search.',
+  ],
+  DIVERSIFIER_EXHAUSTED: ['DIVERSIFIER_EXHAUSTED', 'Diversifier index range is exhausted.'],
+  ADDRESS_SEARCH_LIMIT: ['ADDRESS_SEARCH_LIMIT', 'No valid address found within maxAttempts; adjust the search range.'],
+  DISCOVERY_RANGE_UNSAFE: ['DISCOVERY_RANGE_UNSAFE', 'Transparent address index exceeds the safe discovery range.'],
+  RECEIVER_UNAVAILABLE: [
+    'RECEIVER_UNAVAILABLE', 'A receiver could not be derived or selected with this viewing authority.',
+  ],
+  RESOURCE_LIMIT: [
+    'RESOURCE_LIMIT', 'Viewing operation exceeds a resource limit; reduce input size or search attempts.',
+  ],
 };
 function mapped(error: unknown): never {
   if (isZcashError(error)) throw error;
-  const name = typeof error === 'string'
-    ? error
-    : error instanceof Error
-      ? Object.getOwnPropertyDescriptor(error, 'message')?.value
-      : undefined;
-  const code = typeof name === 'string' ? codes[name] : undefined;
+  let name: unknown;
+  try {
+    name = typeof error === 'string'
+      ? error
+      : error instanceof Error
+        ? Object.getOwnPropertyDescriptor(error, 'message')?.value
+        : undefined;
+  } catch {
+    // Foreign exception objects must not bypass sanitized error mapping.
+  }
+  const diagnostic = typeof name === 'string' && Object.hasOwn(diagnostics, name) ? diagnostics[name] : undefined;
+  const code = diagnostic?.[0];
   throw failure(
     code ?? 'RUNTIME_UNAVAILABLE',
     code ? 'address' : 'runtime',
     code === 'CLOSED' ? 'none' : code === 'RESOURCE_LIMIT' || !code ? 'configure' : 'correct-input',
-    'Viewing operation failed.',
+    diagnostic?.[1] ?? 'Viewing runtime failed.',
   );
 }
 function run<T>(signal: AbortSignal | undefined, action: () => T): T {

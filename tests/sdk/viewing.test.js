@@ -11,7 +11,7 @@ import * as errors from '../../dist/src/errors.js';
 
 test('viewing composition owns native handles, preserves caller cancellation and reparses plain decoded records',async()=>{
   if (!vm.SourceTextModule) { execFileSync(process.execPath,['--experimental-vm-modules',import.meta.filename],{stdio:'pipe'}); return; }
-  const network={},calls=[];let freed=0,abortDuring;
+  const network={},calls=[];let freed=0,abortDuring,nativeFailure;
   function native(kind='ufvk') {return {
     describe:()=>({kind,components:['p2pkh'],enabledPools:['transparent'],provenance:null}),
     export:(format,ack)=>{assert.equal(ack,'discloses-viewing-authority');if(kind==='uivk'&&format==='ufvk')throw 'FULL_VIEWING_KEY_REQUIRED';return format;},
@@ -20,7 +20,7 @@ test('viewing composition owns native handles, preserves caller cancellation and
     find:(index,request,attempts)=>{assert.equal(attempts,3);return{address:'native-found',index,receiverTypes:['p2pkh'],intendedPools:['transparent']};},
   };}
   const codec={openViewingAuthority:(_p,format,encoded,pools)=>{calls.push([format,encoded,JSON.parse(pools)]);abortDuring?.abort();return native();},
-    decodeViewingAddress:(_p,encoded)=>({encoded,knownReceivers:['p2pkh'],unknownTypecodes:[]}),
+    decodeViewingAddress:(_p,encoded)=>{if(nativeFailure!==undefined)throw nativeFailure;return{encoded,knownReceivers:['p2pkh'],unknownTypecodes:[]};},
     selectViewingReceiver:(_p,encoded,pool,height,branch)=>{calls.push([encoded,pool,height,branch]);return{pool,type:'p2pkh',bytes:new Uint8Array([7])};}};
   const modules={'./network.js':{networkBinding:n=>{if(n!==network)throw errors.invalidArgument();return{definition:{binding:'same',parameters:{bytes:new Uint8Array([1])}},codec};}},
     './clients/owned-plumbing.js':plumbing,'./clients/light-chain-reads.js':lifecycle,'./primitives.js':primitives,'./errors.js':errors};
@@ -39,6 +39,24 @@ test('viewing composition owns native handles, preserves caller cancellation and
   const decoded=await addresses.decode({network,address:'native'});
   const selected=await addresses.selectReceiver({address:{...decoded,knownReceivers:[]},pool:'transparent',context:{network,targetHeight:1,branchId:2}});
   assert.deepEqual([...selected.bytes],[7]);assert.deepEqual(calls.at(-1),['native','transparent',1,2]);
+  let errorReads=0;
+  const accessor=Object.defineProperty(new Error(),'message',{get(){errorReads++;throw Error('private exception');}});
+  const hostile=new Proxy(new Error(),{getOwnPropertyDescriptor(){throw Error('private exception');}});
+  for(const foreign of ['private exception','__proto__','constructor','toString',new Error('private exception'),accessor,hostile]) {
+    nativeFailure=foreign;
+    await assert.rejects(addresses.decode({network,address:'private address'}),error=>{
+      assert.ok(errors.isZcashError(error));assert.equal(error.code,'RUNTIME_UNAVAILABLE');
+      assert.equal(error.stage,'runtime');assert.equal(error.recovery,'configure');
+      assert.equal(error.message,'Viewing runtime failed.');
+      assert.doesNotMatch(`${error.stack} ${JSON.stringify(error)}`,/private exception|private address/);return true;
+    });
+  }
+  assert.equal(errorReads,0);
+  nativeFailure=new Error('INVALID_ADDRESS');
+  await assert.rejects(addresses.decode({network,address:'private address'}),e=>e.code==='INVALID_ARGUMENT'&&/different network/.test(e.message));
+  nativeFailure=errors.invalidArgument();
+  await assert.rejects(addresses.decode({network,address:'private address'}),e=>e===nativeFailure);
+  nativeFailure=undefined;
   let accessed=0;await assert.rejects(addresses.derive({account:incoming,index:0n,request:Object.defineProperty({},'format',{get(){accessed++;return'transparent';}})}),e=>e.code==='INVALID_ARGUMENT');assert.equal(accessed,0);
   const pre=new AbortController();pre.abort();const count=calls.length;await assert.rejects(accountFromViewingKey({network,format:'ufvk',encoded:'fixture',enabledPools:['transparent'],signal:pre.signal}),e=>e.code==='ABORTED');assert.equal(calls.length,count);
   abortDuring=new AbortController();await assert.rejects(accountFromViewingKey({network,format:'ufvk',encoded:'fixture',enabledPools:['transparent'],signal:abortDuring.signal}),e=>e.code==='ABORTED');assert.equal(freed,2,'unpublished native handle freed on cancellation');
