@@ -73,10 +73,12 @@ test('packed release candidate imports and typechecks in an isolated Node consum
   for (const hook of ['preinstall', 'install', 'postinstall']) assert.equal(manifest.scripts[hook], undefined);
   const assetPrefix = 'dist/src/runtime/assets/';
   const inventory = JSON.parse(await readFile(join(installed, assetPrefix, 'inventory.json'), 'utf8'));
+  const isNotice = name => name === 'LICENSE' || name.startsWith('licenses/');
   assert.deepEqual(packed.files.filter(file => file.path.startsWith(assetPrefix)).map(file => file.path.slice(assetPrefix.length)).sort(),
-    [...Object.keys(inventory), 'inventory.json'].sort(), 'only inventoried runtime/proving files may ship');
+    [...Object.keys(inventory).filter(name => !isNotice(name)), 'inventory.json'].sort(),
+    'runtime/proving files ship once; notices belong at the package root');
   for (const [name, expected] of Object.entries(inventory)) {
-    const bytes = await readFile(join(installed, assetPrefix, name));
+    const bytes = await readFile(join(installed, isNotice(name) ? '' : assetPrefix, name));
     assert.equal(bytes.length, expected.byteLength, name);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), expected.sha256, name);
   }

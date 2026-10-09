@@ -11,7 +11,7 @@ To check the production build locally, run `npm run docs:build -- --base /zcashj
 ## Optional GitBook Git Sync
 
 1. Create or open your GitBook documentation space and enable GitHub Git Sync.
-2. Grant GitBook access to `jp4g/zcash.js` and select `main`.
+2. Grant GitBook access to `zcashlabs/zcashjs` and select `main`.
 3. Import from GitHub for the initial sync so the repository supplies the guide.
 4. For a space mapped to the repository root, the root `.gitbook.yaml` selects `docs/api`. If mapping the space directly to `docs/api`, its `README.md` and `SUMMARY.md` use GitBook's defaults.
 5. Review the imported chapters and configure the site's visibility/domain in GitBook before publishing.

@@ -2,7 +2,7 @@
 
 The project-owned SDK, bindings, C adapter and codec wrappers are licensed under the root MIT [LICENSE](../LICENSE). Third-party code retains the grants and conditions below; the project license does not relicense it.
 
-Keep this directory and the root LICENSE with redistributed JavaScript/WASM artifacts. The runtime manifest describes executable assets; these notices are accompanying distribution files, not executable assets to load into a worker.
+Keep this directory and the root LICENSE with redistributed JavaScript/WASM artifacts. The SDK ships one copy here; its bundled-asset inventory verifies the runtime notices at these root paths. Standalone runtime distributions retain their own accompanying notices. The runtime manifest describes executable assets; these notices are accompanying distribution files, not executable assets to load into a worker.
 
 - `NATIVE.txt` and `native-sources.json`: all 257 third-party crates from the current wallet producer's Cargo metadata, including conservative host/build/target-only coverage. This also covers every registry package/version in the standalone lightwire and transparent-address locks. It does not claim every listed crate is linked.
 - `PLATFORM.txt`: WASI SDK 27.0, wasi-libc, LLVM/compiler-rt and SQLite notices, preserving their MIT, Apache, BSD and LLVM-exception conditions. SQLite's copyright dedication is separate from its Rust wrapper license.

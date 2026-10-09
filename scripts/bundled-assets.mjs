@@ -1,11 +1,13 @@
 // Generate once from qualified inputs; ordinary builds verify and copy committed assets.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { cpSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const root = resolve(import.meta.dirname, '..');
 const source = join(root, 'src/runtime/assets');
+const isNotice = name => name === 'LICENSE' || name.startsWith('licenses/');
+const assetPath = name => join(isNotice(name) ? root : source, name);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 if (process.argv[2] === '--generate') {
   assert.equal(process.argv.length, 5, 'usage: --generate RUNTIME_PACKAGE PROVING_DIRECTORY');
@@ -33,15 +35,20 @@ if (process.argv[2] === '--generate') {
     assert.equal(sha(bytes), asset.sha256);
     files[`proving/${asset.assetId}`] = bytes;
   }
-  files['wallet/LICENSE'] = readFileSync(join(runtime, 'LICENSE'));
+  files.LICENSE = readFileSync(join(runtime, 'LICENSE'));
   for (const entry of readdirSync(join(runtime, 'licenses'), { recursive: true, withFileTypes: true })) {
     if (entry.isFile()) {
       const name = join(entry.parentPath, entry.name).slice(join(runtime, 'licenses').length + 1);
-      files[`wallet/licenses/${name}`] = readFileSync(join(runtime, 'licenses', name));
+      // The SDK has its own distribution README; preserve actual notices byte-for-byte.
+      if (name !== 'README.md') files[`licenses/${name}`] = readFileSync(join(runtime, 'licenses', name));
     }
+  }
+  for (const [name, bytes] of Object.entries(files)) {
+    if (isNotice(name)) assert.deepEqual(readFileSync(assetPath(name)), bytes, `update root notice: ${name}`);
   }
   mkdirSync(source); // Never overwrite a previously pinned inventory.
   for (const [name, bytes] of Object.entries(files)) {
+    if (isNotice(name)) continue;
     mkdirSync(join(source, name, '..'), { recursive: true });
     writeFileSync(join(source, name), bytes, { flag: 'wx' });
   }
@@ -57,7 +64,7 @@ if (process.argv[2] === '--generate') {
   assert.equal(process.argv.length, 2);
   const inventory = JSON.parse(readFileSync(join(source, 'inventory.json')));
   for (const [name, expected] of Object.entries(inventory)) {
-    const bytes = readFileSync(join(source, name));
+    const bytes = readFileSync(assetPath(name));
     assert.equal(bytes.length, expected.byteLength, name);
     assert.equal(sha(bytes), expected.sha256, name);
   }
@@ -71,6 +78,8 @@ if (process.argv[2] === '--generate') {
     assert.equal(sha(readFileSync(join(root, name))), expected,
       `stale packaged worker: ${name}; regenerate the worker and runtime package`);
   }
-  cpSync(source, join(root, 'dist/src/runtime/assets'), { recursive: true });
+  const output = join(root, 'dist/src/runtime/assets');
+  rmSync(output, { recursive: true, force: true }); // Remove stale assets from earlier builds.
+  cpSync(source, output, { recursive: true });
   for (const name of ['bundled-assets.mjs', 'bundled-assets.d.mts']) cpSync(join(root, 'src/runtime', name), join(root, 'dist/src/runtime', name));
 }
