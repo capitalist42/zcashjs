@@ -43,7 +43,7 @@ try {
     const worker = join(staging, 'worker.mjs'), runtime = join(staging, 'runtime');
     node('scripts/build-wallet-worker.js', worker);
     node('scripts/package-native-wallet.js', native.output, native.source, worker, runtime);
-    node('scripts/primitive-capsule.js', native.output);
+    node('scripts/primitive-capsule.js', native.output, native.revision);
     node('scripts/bundled-assets.js', '--generate', runtime, proving);
     node('scripts/bundled-assets.js');
   } finally { rmSync(staging, { recursive: true, force: true }); }

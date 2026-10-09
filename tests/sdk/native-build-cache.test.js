@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { nativeSource, verifyNativeBuild } from '../../scripts/build-native-wallet.js';
+import { verifyNativeBuild } from '../../scripts/build-native-wallet.js';
 
 test('native cache rejects changed artifacts, receipts, incomplete builds and stale revisions', t => {
   const root = mkdtempSync(join(tmpdir(), 'native-cache-'));
@@ -12,7 +12,8 @@ test('native cache rejects changed artifacts, receipts, incomplete builds and st
   const sha = bytes => createHash('sha256').update(bytes).digest('hex');
   const put = (name, bytes) => writeFileSync(join(root, name), bytes);
   const files = { 'native.wasm': sha('wasm') };
-  const receipt = { format: 'zcash-js-native-build/1', complete: true, revision: nativeSource.revision,
+  const revision = 'a'.repeat(40);
+  const receipt = { format: 'zcash-js-native-build/1', complete: true, revision,
     artifacts: files, primitiveArtifacts: files, codecs: {} };
   for (const name of ['bundle', 'primitive', 'lightwire', 'transparent-address']) {
     mkdirSync(join(root, name));
@@ -23,15 +24,15 @@ test('native cache rejects changed artifacts, receipts, incomplete builds and st
     receipt.codecs[name] = sha(bytes);
   }
   const save = () => put('build.json', JSON.stringify(receipt));
-  save(); verifyNativeBuild(root);
+  save(); verifyNativeBuild(root, revision);
   put('bundle/native.wasm', 'changed');
-  assert.throws(() => verifyNativeBuild(root), /native artifact checksum/);
+  assert.throws(() => verifyNativeBuild(root, revision), /native artifact checksum/);
   put('bundle/native.wasm', 'wasm');
   receipt.revision = '0'.repeat(40); save();
-  assert.throws(() => verifyNativeBuild(root), /stale native revision/);
-  receipt.revision = nativeSource.revision; receipt.complete = false; save();
-  assert.throws(() => verifyNativeBuild(root), /incomplete native build/);
+  assert.throws(() => verifyNativeBuild(root, revision), /stale native revision/);
+  receipt.revision = revision; receipt.complete = false; save();
+  assert.throws(() => verifyNativeBuild(root, revision), /incomplete native build/);
   receipt.complete = true; save();
   put('lightwire/receipt.json', '{}');
-  assert.throws(() => verifyNativeBuild(root), /native codec receipt/);
+  assert.throws(() => verifyNativeBuild(root, revision), /native codec receipt/);
 });

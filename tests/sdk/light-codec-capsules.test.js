@@ -14,9 +14,12 @@ test('packed light codecs are lazy, native, owned and bound to their capsule rec
   execFileSync('tar',['-xzf',join(scratch,packed.filename),'-C',join(scratch,'unpacked')]);
   const runtime=join(scratch,'unpacked/package/dist/src/runtime');
   const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+  const {release}=JSON.parse(await readFile(join(root,'scripts/native-source.json')));
+  const revision=execFileSync('git',['-C',join(root,'.cache/native',release,'source'),'rev-parse',`refs/tags/${release}^{commit}`],{encoding:'utf8'}).trim();
   for(const name of ['primitive','lightwire','transparent-address']) {
     const receipt=JSON.parse(await readFile(join(runtime,`${name}-capsule.json`),'utf8'));
-    assert.equal(receipt.nativeRevision,JSON.parse(await readFile(join(root,'scripts/native-source.json'))).revision);
+    assert.equal(receipt.nativeRelease,release);
+    assert.equal(receipt.nativeRevision,revision);
     assert.equal(sha(await readFile(join(runtime,`${name}-capsule.mjs`))),receipt.sha256);
     assert.equal(sha(await readFile(join(root,'scripts/primitive-capsule.js'))),receipt.generatorSha256);
     assert.equal(sha(await readFile(join(root,'package-lock.json'))),receipt.lockSha256);

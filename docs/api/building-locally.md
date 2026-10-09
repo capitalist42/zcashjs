@@ -36,7 +36,8 @@ This repo builds the TypeScript SDK, worker and npm package. The Rust crate
 `zakura-network-bindings` and native codecs live in
 [zakura-wasm-bindings](https://github.com/jp4g/zakura-wasm-bindings), built via
 `cargo xtask build`. [native-source.json](https://github.com/zcashlabs/zcashjs/blob/main/scripts/native-source.json)
-pins that repository's commit; its toolchain, lockfiles and tool hashes pin the build inputs.
+selects its release tag. Build receipts retain the resolved commit; the toolchain,
+lockfiles and tool hashes pin the build inputs.
 
 Sapling parameters come from `https://download.z.cash/downloads/`, checked against
 the sizes and hashes in [proving-assets.ts](https://github.com/zcashlabs/zcashjs/blob/main/src/wallet/proving-assets.ts).
@@ -49,7 +50,7 @@ Run one build at a time per checkout. Remove the relevant cache and retry:
 | Problem | Remove |
 | --- | --- |
 | Rebuild native output | `.cache/native/<revision>/sdk/` |
-| Interrupted source fetch | `.cache/native/<revision>/` |
+| Interrupted source fetch | `.cache/native/<release>/` |
 | Checksum mismatch | The cached file named in the error |
 | Reset all SDK build caches | `.cache/native/`, `.cache/proving/`, `dist/` |
 
@@ -66,7 +67,7 @@ npm pack --pack-destination /tmp/zcash-package
 assets and licenses. Install the resulting tarball from your application:
 
 ```sh
-npm install /tmp/zcash-package/jp4g-zcash.js-0.1.0-rc.4.tgz
+npm install /tmp/zcash-package/jp4g-zcash.js-0.1.0-rc.5.tgz
 ```
 
 Use the filename printed by `npm pack` for the current version.

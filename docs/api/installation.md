@@ -5,7 +5,7 @@
 Use Node **22.12 or newer** for Node applications.
 
 ```sh
-npm install @jp4g/zcash.js@0.1.0-rc.4
+npm install @jp4g/zcash.js@0.1.0-rc.5
 ```
 
 The package includes TypeScript declarations, the wallet engine, workers, and
