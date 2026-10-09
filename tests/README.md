@@ -95,6 +95,13 @@ also requires `ARTIFACT_WEBDRIVER` and a Firefox profile that trusts the certifi
 it does not disable certificate validation. See its entrypoint in
 `runtime/artifacts-browser.mjs` for the optional hostname/profile variables.
 
+The proving-cache test skips unless `PCZT_PROVING_PARAMETERS` names a directory
+containing the canonical Sapling parameters. After building, run it with:
+
+```sh
+PCZT_PROVING_PARAMETERS="$PWD/.cache/proving" node --test tests/wallet/proving.test.mjs
+```
+
 Documentation checks remain available as `npm run docs:typecheck`,
 `npm run docs:check-recovery`, and `npm run docs:build`.
 
