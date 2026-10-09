@@ -10,11 +10,12 @@ const root = resolve(import.meta.dirname, '..');
 export const nativeSource = JSON.parse(readFileSync(join(import.meta.dirname, 'native-source.json')));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
-export function verifyNativeBuild(output) {
+export function verifyNativeBuild(output, revision) {
+  assert.match(revision, /^[a-f0-9]{40}$/);
   const receipt = JSON.parse(readFileSync(join(output, 'build.json')));
   assert.equal(receipt.format, 'zcash-js-native-build/1');
   assert.equal(receipt.complete, true, 'incomplete native build');
-  assert.equal(receipt.revision, nativeSource.revision, 'stale native revision');
+  assert.equal(receipt.revision, revision, 'stale native revision');
   const verify = (directory, artifacts) => {
     assert.ok(artifacts && Object.keys(artifacts).length, 'missing native artifact inventory');
     for (const [name, hash] of Object.entries(artifacts)) {
@@ -35,20 +36,22 @@ export function verifyNativeBuild(output) {
 }
 
 export function buildNative() {
-  assert.match(nativeSource.revision, /^[a-f0-9]{40}$/);
+  assert.match(nativeSource.release, /^v\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$/);
   const cache = join(root, '.cache/native');
-  const directory = join(cache, nativeSource.revision);
+  const directory = join(cache, nativeSource.release);
+  const tag = `refs/tags/${nativeSource.release}`;
   const source = join(directory, 'source');
-  const output = join(directory, 'sdk');
   const git = (...args) => execFileSync('git', ['-C', source, ...args], { encoding: 'utf8' }).trim();
   if (!existsSync(source)) {
     mkdirSync(source, { recursive: true });
     git('init', '--quiet');
     git('remote', 'add', 'origin', nativeSource.repository);
-    git('fetch', '--depth', '1', 'origin', nativeSource.revision);
-    git('checkout', '--detach', 'FETCH_HEAD');
+    git('fetch', '--depth', '1', 'origin', `${tag}:${tag}`);
+    git('checkout', '--detach', tag);
   }
-  assert.equal(git('rev-parse', 'HEAD'), nativeSource.revision, `remove stale native checkout: ${source}`);
+  const revision = git('rev-parse', `${tag}^{commit}`);
+  const output = join(cache, revision, 'sdk');
+  assert.equal(git('rev-parse', 'HEAD'), revision, `remove stale native checkout: ${source}`);
   assert.equal(git('status', '--porcelain', '--untracked-files=no'), '', `modified native checkout: ${source}`);
   if (!existsSync(join(output, 'build.json'))) {
     // This directory is owned by the build; an interrupted attempt has no receipt.
@@ -59,10 +62,10 @@ export function buildNative() {
   } else {
     console.error('Verifying cached native build.');
   }
-  const receipt = verifyNativeBuild(output);
+  const receipt = verifyNativeBuild(output, revision);
   assert.equal(receipt.tree, git('rev-parse', 'HEAD^{tree}'), 'native source tree');
   assert.equal(receipt.lockSha256, sha(readFileSync(join(source, 'Cargo.lock'))), 'native dependency lock');
-  return { source, output };
+  return { source, output, revision };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

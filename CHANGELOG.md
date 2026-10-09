@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.1.0-rc.5
+
+- Build native components from the `zakura-wasm-bindings` v0.1.0 release.
+  Runtime and proving assets remain bundled in npm; generated output stays out of Git.
+- Add `getConsensusContext({ network, targetHeight })`, export the documented public types,
+  and preserve actionable error codes with sanitized recovery guidance.
 
 - Recognize Zaino's plain transaction ID in successful broadcast replies, while
   retaining lightwalletd's JSON-quoted format and exact transaction matching.
