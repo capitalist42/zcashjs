@@ -8,7 +8,7 @@ npm ci
 npm run check
 ```
 
-`check` runs lint, builds `dist/`, and runs `tests/*/*.test.mjs` with four files
+`check` runs lint, builds `dist/`, and runs `tests/*/*.test.js` with four files
 at a time. `npm test` omits lint; `npm run test:sdk` runs only SDK tests.
 The first build compiles Rust; later builds reuse verified native output.
 No live blockchain endpoint is needed.
@@ -18,7 +18,7 @@ Missing or modified fixtures fail rather than silently skipping native coverage.
 All source-under-test imports use the current repository's `dist/` directory.
 When invoking a test file directly, run `npm run build` first.
 
-`tests/wallet/bundled.test.mjs` also opens the shipped runtime and verifies the
+`tests/wallet/bundled.test.js` also opens the shipped runtime and verifies the
 included proving files offline, without explicit runtime or asset-loader options.
 The packed Node consumer rejects missing/corrupted installed WASM.
 
@@ -40,8 +40,8 @@ For an opt-in runtime recovery check, close a testnet wallet containing an
 observed finalized payment, let it fall behind the chain, then run:
 
 ```sh
-node tests/wallet/runtime-recovery-live.mjs /absolute/path/to/closed-wallet revision
-node tests/wallet/runtime-recovery-live.mjs /absolute/path/to/closed-wallet source-change
+node tests/wallet/runtime-recovery-live.js /absolute/path/to/closed-wallet revision
+node tests/wallet/runtime-recovery-live.js /absolute/path/to/closed-wallet source-change
 ```
 
 Each run locks and copies the database into a private temporary directory, then
@@ -56,7 +56,7 @@ exit. These checks require the public testnet endpoint, not recovery material.
 `npm run test:package:node` runs only the clean installed Node portion, without
 building or launching the browser application. To compare the same installed
 engine loaded locally versus externally, run
-`node scripts/compare-wallet-memory.mjs CONSUMER CERT KEY` with that retained
+`node scripts/compare-wallet-memory.js CONSUMER CERT KEY` with that retained
 consumer and a locally trusted TLS certificate/key. The child processes trust
 only the supplied additional CA; certificate verification is not disabled.
 
@@ -70,14 +70,14 @@ another driver executable; let that driver select its Firefox executable.
 ```sh
 npm run test:sdk:real-firefox
 npm run build
-node tests/clients/grpc-web-browser.mjs
-node tests/clients/public-chain-reads-browser.mjs
-node tests/clients/public-block-reads-browser.mjs
-node tests/clients/public-transaction-reads-browser.mjs
-node tests/clients/light-chain-reads-browser.mjs
-node tests/clients/light-transparent-reads-browser.mjs
-node tests/clients/light-server-observation-browser.mjs
-node tests/wallet/host-browser.mjs
+node tests/clients/grpc-web-browser.js
+node tests/clients/public-chain-reads-browser.js
+node tests/clients/public-block-reads-browser.js
+node tests/clients/public-transaction-reads-browser.js
+node tests/clients/light-chain-reads-browser.js
+node tests/clients/light-transparent-reads-browser.js
+node tests/clients/light-server-observation-browser.js
+node tests/wallet/host-browser.js
 ```
 
 These use local fixture servers and write logs/profiles under the ignored
@@ -91,13 +91,13 @@ variables and trust the test certificate for that Node process with
 `NODE_EXTRA_CA_CERTS`. Never commit the private key. The artifact browser runner
 also requires `ARTIFACT_WEBDRIVER` and a Firefox profile that trusts the certificate;
 it does not disable certificate validation. See its entrypoint in
-`runtime/artifacts-browser.mjs` for the optional hostname/profile variables.
+`runtime/artifacts-browser.js` for the optional hostname/profile variables.
 
 The proving-cache test skips unless `PCZT_PROVING_PARAMETERS` names a directory
 containing the canonical Sapling parameters. After building, run it with:
 
 ```sh
-PCZT_PROVING_PARAMETERS="$PWD/.cache/proving" node --test tests/wallet/proving.test.mjs
+PCZT_PROVING_PARAMETERS="$PWD/.cache/proving" node --test tests/wallet/proving.test.js
 ```
 
 Documentation checks remain available as `npm run docs:typecheck`,

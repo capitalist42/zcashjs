@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "probe": "node wallet.mjs probe",
-    "init": "node wallet.mjs init",
-    "status": "node wallet.mjs status"
+    "probe": "node wallet.js probe",
+    "init": "node wallet.js init",
+    "status": "node wallet.js status"
   },
   "dependencies": {
     "@jp4g/zcash.js": "0.1.0-rc.4",

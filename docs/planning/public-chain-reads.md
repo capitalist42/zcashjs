@@ -46,8 +46,8 @@ To respect this lane's five-file write boundary, build output stays in owned scr
 
 ```sh
 npm run build -- --outDir /home/jack/zcash-public-chain-reads-scratch/check/dist
-node --test tests/clients/public-chain-reads.test.mjs
-node tests/clients/public-chain-reads-browser.mjs
+node --test tests/clients/public-chain-reads.test.js
+node tests/clients/public-chain-reads-browser.js
 ```
 
 `PUBLIC_CHAIN_READS_BUILD` can point the tests at another already-built `dist`. The default is the scratch path above. The executable browser harness uses installed `/snap/bin/geckodriver` with the existing read-only Firefox options helper, serves current compiled modules, and records evidence in `/home/jack/zcash-public-chain-reads-logs`. It does not invoke the old SDK runner's historical source pin. It deletes its own WebDriver session and signals only its identified process group, checking cleanup afterward. No browser installation, sandbox disabling, or TLS override is used.

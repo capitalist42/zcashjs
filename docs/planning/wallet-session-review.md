@@ -18,8 +18,8 @@ not interpret it as a per-operation ledger. No rejected write is replayed.
 
 Fresh verification in `zcash-worktrees/codex-takeover`:
 
-- TypeScript compilation passed; all six `session.test.mjs` tests passed.
-- `WALLET_TEST_ROOT=/tmp node tests/wallet/session-node.mjs
+- TypeScript compilation passed; all six `session.test.js` tests passed.
+- `WALLET_TEST_ROOT=/tmp node tests/wallet/session-node.js
   /home/jack/zakura-account-compose-scratch/fixes/r1/mnemonic-build-04/bundle`
   exited 0. Three accounts/eight addresses survived close, two observed worker
   destructions, and reopen at `/tmp/views-node-dksXU5`.
@@ -42,8 +42,8 @@ Freshly compiled source was byte-compared to its retained browser staging:
 | --- | --- |
 | `dist/src/wallet/session.js` | `ccfd08e1ab57309b44dc608c5374ce55d06108e61b5e78f3ed369e86bac652fb` |
 | `dist/src/errors.js` | `f5f5930b7a5646bbf98e468ec7c89a73b3baa603543dcc9ddbe308d57bbb77c1` |
-| `tests/wallet/views-worker.mjs` | `3bbdbe708c8b80c493fe1b03d98c1bceccf10bd779cf45fb793b13fdbe3a03dd` |
-| `tests/wallet/session-browser.mjs` | `afdffcdde315633d2dddfb766fee1f627fd77a6fd7556e5e6833b673869e6cca` |
+| `tests/wallet/views-worker.js` | `3bbdbe708c8b80c493fe1b03d98c1bceccf10bd779cf45fb793b13fdbe3a03dd` |
+| `tests/wallet/session-browser.js` | `afdffcdde315633d2dddfb766fee1f627fd77a6fd7556e5e6833b673869e6cca` |
 
 All 54 files in staging's `accepted` directory also matched the original
 `mnemonic-build-04/bundle` byte-for-byte. This establishes current retained-file
