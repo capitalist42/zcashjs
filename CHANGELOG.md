@@ -2,6 +2,11 @@
 
 ## 0.1.0-rc.5
 
+- Select ZIP 259 consensus branch `0x77190ad9` for the pinned mainnet and testnet
+  chains at their NU7 activation heights (testnet 4465026, mainnet 3543405). The
+  native `zcash-js-network/1` document still ends at NU6.3. Light-client handshakes
+  use this branch, so a new testnet wallet can open after NU7 activation.
+
 - Publish under `@zcashlabs/zcash.js`; update application imports to this scope.
 
 - Build native components from the `zakura-wasm-bindings` v0.1.0 release.

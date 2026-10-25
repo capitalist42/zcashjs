@@ -2,7 +2,7 @@ import { addressInput, broadcastInput } from './clients/request-inputs.js';
 import type {
   CustomLightTransport, GrpcTransport, LightClient, LightClientOptions, Network, NetworkDefinition, Op,
 } from './types.js';
-import { defineNetwork, networkBinding } from './network.js';
+import { consensusAt, defineNetwork, networkBinding } from './network.js';
 import { grpc, grpcAdapter, grpcBinding } from './grpc.js';
 import { failure, invalidArgument } from './errors.js';
 import { snapshot } from './clients/owned-plumbing.js';
@@ -60,11 +60,7 @@ export function createLightClient(
     signal.throwIfAborted();
     if (!verified) {
       const info = await readLightdInfo({ codec: value.wire, transport, sourceId: transport.sourceId }, { signal });
-      const branch = codec.consensusContext(
-        definition.parametersFormat,
-        definition.parameters.bytes,
-        info.blockHeight,
-      ).branchId;
+      const branch = consensusAt(codec, definition, info.blockHeight).branchId;
       const mismatch = !matchesLightNetwork(info.chainName, family)
         ? 'Light server chain name does not match the configured network encoding.'
         : info.saplingActivationHeight !== definition.parameters.heights[1]

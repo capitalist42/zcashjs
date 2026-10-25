@@ -1,13 +1,14 @@
 import type { BuiltinNetwork, ConsensusContext, Network, NetworkDefinition, Op } from './types.js';
-import { networkPreset } from './network-presets.js';
+import { NU6_3_BRANCH_ID, NU7_ACTIVATION, NU7_BRANCH_ID, networkPreset } from './network-presets.js';
 import { bindNetworkDefinition } from './network-parameters.js';
+import type { BoundNetworkDefinition } from './network-parameters.js';
 import { ownBytes, snapshot } from './clients/owned-plumbing.js';
 import { failure, invalidArgument, isZcashError } from './errors.js';
 
 type Codec = typeof import('./runtime/primitive-capsule.mjs');
 const networks = new WeakMap<
   Network,
-  Readonly<{ definition: ReturnType<typeof bindNetworkDefinition>; codec: Codec }>
+  Readonly<{ definition: BoundNetworkDefinition; codec: Codec }>
 >();
 let codec: Promise<Codec> | undefined;
 const aborted = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!;
@@ -82,15 +83,28 @@ export async function defineNetwork(args: BuiltinNetwork | (NetworkDefinition & 
   return network;
 }
 
+/** Native branch for this document, with ZIP 259 NU7 applied to the real mainnet and testnet chains. */
+export function consensusAt(codec: Codec, definition: BoundNetworkDefinition, height: number) {
+  const context = codec.consensusContext(definition.parametersFormat, definition.parameters.bytes, height);
+  const scheduled = NU7_ACTIVATION[definition.genesisHash as keyof typeof NU7_ACTIVATION];
+  const activation = scheduled?.encoding === definition.parameters.encoding ? scheduled.height : null;
+  // The document's last slot is NU6.3. Do not report NU7 before that upgrade on a custom schedule.
+  const previous = definition.parameters.heights.at(-1);
+  if (activation !== null && height >= activation
+    && previous !== undefined && previous !== null && previous <= activation
+    && context.branchId === NU6_3_BRANCH_ID) {
+    return Object.freeze({ height, branchId: NU7_BRANCH_ID });
+  }
+  return context;
+}
+
 /** Derive consensus rules for an explicit height using the registered network schedule. */
 export function getConsensusContext(args: { network: Network; targetHeight: number }): ConsensusContext {
   const { network, targetHeight } = snapshot(args, ['network', 'targetHeight']);
   const { definition, codec: native } = networkBinding(network);
   if (!Number.isInteger(targetHeight) || targetHeight < 0 || targetHeight > 0xffffffff) throw invalidArgument();
   try {
-    const { branchId } = native.consensusContext(
-      definition.parametersFormat, definition.parameters.bytes, targetHeight,
-    );
+    const { branchId } = consensusAt(native, definition, targetHeight);
     return Object.freeze({ network, targetHeight, branchId });
   } catch {
     throw failure('RUNTIME_UNAVAILABLE', 'runtime', 'configure', 'Consensus context derivation failed.');

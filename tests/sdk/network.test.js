@@ -73,6 +73,15 @@ test('public consensus context follows preset and custom activation boundaries',
     assert.equal(getConsensusContext({ network, targetHeight: 0 }).branchId, 0);
     assert.equal(getConsensusContext({ network, targetHeight: 0xffffffff }).targetHeight, 0xffffffff);
   }
+  const testnet = await defineNetwork('testnet');
+  const mainnet = await defineNetwork('mainnet');
+  const custom = await defineNetwork(definition());
+  assert.equal(getConsensusContext({ network: testnet, targetHeight: 4465025 }).branchId, 0x37a5165b);
+  assert.equal(getConsensusContext({ network: testnet, targetHeight: 4465026 }).branchId, 0x77190ad9);
+  assert.equal(getConsensusContext({ network: mainnet, targetHeight: 3543404 }).branchId, 0x37a5165b);
+  assert.equal(getConsensusContext({ network: mainnet, targetHeight: 3543405 }).branchId, 0x77190ad9);
+  // A copied height on another chain does not inherit the deployed NU7 branch.
+  assert.equal(getConsensusContext({ network: custom, targetHeight: 4465026 }).branchId, 0x37a5165b);
 });
 
 test('public consensus context rejects invalid heights and forged inputs without invoking getters', async () => {

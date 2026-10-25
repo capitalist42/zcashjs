@@ -1,4 +1,4 @@
-import type { NetworkDefinition, NetworkParameters } from './types.js';
+import type { BlockHash, NetworkDefinition, NetworkParameters } from './types.js';
 import { snapshot } from './clients/owned-plumbing.js';
 import { failure, invalidArgument } from './errors.js';
 import { blockHash } from './primitives.js';
@@ -37,8 +37,14 @@ export function encodeNetworkParameters(
   return { parametersFormat: format, parameters: bytes };
 }
 
+export interface ParsedNetworkParameters {
+  readonly encoding: 'main' | 'test' | 'regtest';
+  readonly heights: readonly (number | null)[];
+  readonly bytes: Uint8Array;
+}
+
 /** Internal document validation only; does not create or register a Network. */
-export function parseNetworkParameters(input: Uint8Array, parametersFormat: string) {
+export function parseNetworkParameters(input: Uint8Array, parametersFormat: string): ParsedNetworkParameters {
   if (parametersFormat !== format || !(input instanceof Uint8Array)) throw invalidParameters();
   // Uint8Array construction copies Buffer too; Buffer.slice() would alias its input.
   let bytes: Uint8Array;
@@ -77,8 +83,16 @@ export function parseNetworkParameters(input: Uint8Array, parametersFormat: stri
   });
 }
 
+export interface BoundNetworkDefinition {
+  readonly identity: string;
+  readonly genesisHash: BlockHash;
+  readonly parametersFormat: string;
+  readonly parameters: ParsedNetworkParameters;
+  readonly binding: string;
+}
+
 /** Owned registration input and exact equality key, not a host token or digest. */
-export function bindNetworkDefinition(definition: unknown) {
+export function bindNetworkDefinition(definition: unknown): BoundNetworkDefinition {
   if (!definition || typeof definition !== 'object'
     || Reflect.ownKeys(definition).some(
       key => !['identity', 'genesisHash', 'parameters', 'parametersFormat'].includes(String(key)),
